@@ -15,5 +15,6 @@ namespace Core;
  */
 interface Module
 {
-    //put your code here
+
+    public function run(Request $request): RequestResponse;
 }

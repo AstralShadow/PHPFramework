@@ -10,6 +10,7 @@ namespace Core;
 
 use Core\Request;
 use Core\Exception;
+use Core\RequestResponse;
 use \ReflectionClass;
 
 /**
@@ -23,9 +24,10 @@ class Controller
 
     private Request $request;
     private Module $module;
+    private RequestResponse $response;
 
     /**
-     * Do all the work in the constructor
+     * Parses the request from $_SERVER and loads the module.
      * @param string $default_module 
      */
     public function __construct(string $default_module) {
@@ -36,10 +38,41 @@ class Controller
     }
 
     /**
+     * Executes and serves the request
+     * Use this one if you dont plan to perform magic outside the framework.
+     * @return void
+     */
+    public function run(): void {
+        $this->execute();
+        $this->serve();
+    }
+
+    /**
+     * Asks the module to respond the request
+     * Stores and returns the response
+     * @return RequestResponse
+     */
+    public function execute(): RequestResponse {
+        $response = $this->module->run($this->request);
+        $this->response = $response;
+        return $response;
+    }
+
+    /**
+     * Serves stored request response and disconnects the script
+     * @return void
+     */
+    public function serve(): void {
+        $response = $this->response;
+        $response->serve();
+        fastcgi_finish_request();
+    }
+
+    /**
      * Create the Request object for the current request
      * @return void
      */
-    public function parseRequest(): void {
+    private function parseRequest(): void {
         $this->request = new Request();
     }
 
@@ -49,14 +82,14 @@ class Controller
      * @return void
      * @throws Exception
      */
-    public function setDefaultModule($default = null): void {
+    private function setDefaultModule($default = null): void {
         $modules = $this->getModuleNames();
         if (!in_array($default, $modules)){
             throw new Exception("The specified default module does not exist");
         }
 
         $module = 'Modules\\' . $this->request->module();
-        if (!isset($module) || !in_array($module, $modules)){
+        if (!in_array(strtolower($module), array_map('strtolower', $modules))){
             $module = $default;
         }
 
@@ -84,7 +117,7 @@ class Controller
      * @return void
      * @throws Exception
      */
-    public function validateRequest(): void {
+    private function validateRequest(): void {
         $module = $this->request->module();
 
         if (!$this->isModule($module)){
@@ -96,8 +129,8 @@ class Controller
      * Create private instance of the requested module 
      * @return void
      */
-    public function loadModule(): void {
-        $module_name = $this->request->module;
+    private function loadModule(): void {
+        $module_name = $this->request->module();
         $this->module = new $module_name($this->request);
     }
 

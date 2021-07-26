@@ -59,13 +59,12 @@ class Controller
     }
 
     /**
-     * Serves stored request response and disconnects the script
+     * Serves stored request response
      * @return void
      */
     public function serve(): void {
         $response = $this->response;
         $response->serve();
-        fastcgi_finish_request();
     }
 
     /**

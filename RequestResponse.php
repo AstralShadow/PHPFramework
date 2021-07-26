@@ -19,7 +19,7 @@ interface RequestResponse
      * Takes http response code as construction variable
      * @param int $statusCode The response status code
      */
-    public function __constructor(int $httpResponseCode = 200);
+    public function __construct(int $httpResponseCode = 200);
 
     /**
      * Sets a header
@@ -28,12 +28,6 @@ interface RequestResponse
      * @return void
      */
     public function setHeader(string $key, string $value): void;
-
-    /**
-     * Appends body content to the response
-     * @param string $output
-     */
-    public function echo(string $output);
 
     /**
      * Serves the response from the module.

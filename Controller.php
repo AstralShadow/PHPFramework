@@ -12,6 +12,7 @@ use Core\Request;
 use Core\Exception;
 use Core\RequestResponse;
 use \ReflectionClass;
+use \PDO;
 
 /**
  * Serves http request
@@ -25,6 +26,7 @@ class Controller
     private Request $request;
     private Module $module;
     private RequestResponse $response;
+    private ?PDO $pdo = null;
 
     /**
      * Parses the request from $_SERVER and loads the module.
@@ -35,6 +37,29 @@ class Controller
         $this->setDefaultModule('Modules\\' . $default_module);
         $this->validateRequest();
         $this->loadModule();
+    }
+
+    /**
+     * Creates PDO connection.
+     * @param string $dsn
+     * @param string $username
+     * @param string $passwd
+     * @return void
+     */
+    public function usePDO(string $dsn,
+                           string $username = null,
+                           string $passwd = null): void {
+        $this->pdo = new \PDO($dsn, $username, $passwd, [
+            PDO::ATTR_PERSISTENT => true
+        ]);
+    }
+
+    /**
+     * Returns current PDO connection or null
+     * @return PDO|null
+     */
+    public function getPDO(): ?PDO {
+        return $this->pdo;
     }
 
     /**
@@ -120,7 +145,7 @@ class Controller
         $module = $this->request->module();
 
         if (!$this->isModule($module)){
-            throw new Exception("$module does not implement Core\Module");
+            throw new Exception("$module does not inherit Core\Module");
         }
     }
 
@@ -130,7 +155,7 @@ class Controller
      */
     private function loadModule(): void {
         $module_name = $this->request->module();
-        $this->module = new $module_name($this->request);
+        $this->module = new $module_name($this, $this, $this);
     }
 
     /**
@@ -141,8 +166,8 @@ class Controller
      */
     private function isModule(string $name): bool {
         $a = new ReflectionClass($name);
-        $interfaces = $a->getInterfaceNames();
-        return in_array('Core\\Module', $interfaces);
+        $parent = $a->getParentClass();
+        return $parent->getName() == 'Core\\Module';
     }
 
 }

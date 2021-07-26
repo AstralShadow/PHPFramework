@@ -13,8 +13,18 @@ namespace Core;
  *
  * @author azcraft
  */
-interface Module
+abstract class Module
 {
 
-    public function run(Request $request): RequestResponse;
+    protected Controller $controller;
+
+    public function __construct(Controller $controller) {
+        $this->controller = $controller;
+    }
+
+    public function getPDO(): ?PDO {
+        return $this->controller->getPDO();
+    }
+
+    abstract public function run(Request $request): RequestResponse;
 }

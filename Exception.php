@@ -9,7 +9,7 @@
 namespace Core;
 
 /**
- * Description of Exception
+ * Exception within Core class
  *
  * @author azcraft
  */

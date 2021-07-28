@@ -74,7 +74,8 @@ abstract class Entity
                 $property->setValue($this, $data[$name]);
                 continue;
             }
-            if (class_exists($typeName, false)){
+
+            if (class_exists($typeName)){
                 $class = new \ReflectionClass($typeName);
                 $parent = $class->getParentClass();
                 if ($parent == new \ReflectionClass(get_class())){
@@ -203,6 +204,21 @@ abstract class Entity
             $users[] = self::get($user[0]);
         }
         return $users;
+    }
+
+    public static function delete(int $id): void {
+        $dbh = self::getPDO();
+        $entity = new \ReflectionClass(get_called_class());
+        $tableName = $entity->getStaticPropertyValue("tableName");
+        $idName = $entity->getStaticPropertyValue("idName");
+
+        $statement = $dbh->prepare(<<<EOF
+            DELETE FROM $tableName
+            WHERE $idName = :id;
+        EOF);
+
+        $statement->bindParam(':id', $id);
+        $statement->execute();
     }
 
     /**

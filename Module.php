@@ -22,9 +22,5 @@ abstract class Module
         $this->controller = $controller;
     }
 
-    public function getPDO(): ?PDO {
-        return $this->controller->getPDO();
-    }
-
     abstract public function run(Request $request): RequestResponse;
 }

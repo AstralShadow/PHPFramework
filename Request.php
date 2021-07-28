@@ -16,14 +16,14 @@ namespace Core;
 class Request implements \Serializable
 {
 
-    const METHOD_GET = 1;
-    const METHOD_POST = 2;
-    const METHOD_PUT = 3;
-    const METHOD_DELETE = 4;
+    const METHOD_GET = "get";
+    const METHOD_POST = "post";
+    const METHOD_PUT = "put";
+    const METHOD_DELETE = "delete";
 
     private ?string $module;
     private array $args = [];
-    private int $method = self::METHOD_GET;
+    private string $method = self::METHOD_GET;
 
     /**
      * 
@@ -59,7 +59,7 @@ class Request implements \Serializable
      * Returns the Request's method
      * @return int The Request's method
      */
-    public function method(): int {
+    public function method(): string {
         return $this->method;
     }
 
@@ -68,7 +68,7 @@ class Request implements \Serializable
      * @param int $method
      * @return void
      */
-    public function setMethod(int $method): void {
+    public function setMethod(string $method): void {
         $this->module = $method;
     }
 

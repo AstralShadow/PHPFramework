@@ -15,9 +15,8 @@ spl_autoload_register(function (string $class): void{
         return;
     }
 
-    $caseInsensitiveLoader = null;
     $caseInsensitiveLoader ??= function (array $path, $filename = '.')
-    use ($caseInsensitiveLoader){
+    use (&$caseInsensitiveLoader){
         if (count($path) && is_dir($filename)){
             foreach (scandir($filename) as $item){
                 if (strtolower($item) === strtolower($path[0])){

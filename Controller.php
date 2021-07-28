@@ -26,15 +26,15 @@ class Controller
     private Request $request;
     private Module $module;
     private RequestResponse $response;
-    private ?PDO $pdo = null;
+    private static ?PDO $pdo = null;
 
     /**
      * Parses the request from $_SERVER and loads the module.
      * @param string $default_module 
      */
-    public function __construct(string $default_module) {
+    public function __construct(string $defaultModule) {
         $this->parseRequest();
-        $this->setDefaultModule('Modules\\' . $default_module);
+        $this->setDefaultModule('Modules\\' . $defaultModule);
         $this->validateRequest();
         $this->loadModule();
     }
@@ -46,10 +46,10 @@ class Controller
      * @param string $passwd
      * @return void
      */
-    public function usePDO(string $dsn,
-                           string $username = null,
-                           string $passwd = null): void {
-        $this->pdo = new \PDO($dsn, $username, $passwd, [
+    public static function usePDO(string $dsn,
+                                  string $username = null,
+                                  string $passwd = null): void {
+        self::$pdo = new \PDO($dsn, $username, $passwd, [
             PDO::ATTR_PERSISTENT => true
         ]);
     }
@@ -58,8 +58,8 @@ class Controller
      * Returns current PDO connection or null
      * @return PDO|null
      */
-    public function getPDO(): ?PDO {
-        return $this->pdo;
+    public static function getPDO(): ?PDO {
+        return self::$pdo;
     }
 
     /**

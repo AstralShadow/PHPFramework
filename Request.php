@@ -40,7 +40,7 @@ class Request implements \Serializable
 
     /**
      * Returns the Request's target module
-     * @return string The Requrest's target module
+     * @return string The Request's target module
      */
     public function module(): ?string {
         return $this->module;
@@ -120,7 +120,7 @@ class Request implements \Serializable
      */
     private function defineFromServerGlobals(): void {
         $this->defineFromString($_SERVER["REQUEST_URI"]);
-        $this->setRequestMethod($_SERVER["REQUREST_METHOD"] ?? "get");
+        $this->setRequestMethod($_SERVER["REQUEST_METHOD"] ?? "get");
     }
 
     /**

@@ -8,8 +8,6 @@
 
 namespace Core\Responses;
 
-use \Core\InstantResponse;
-
 /**
  * Uses php output buffering.
  * You can set headers at any time before end or request.

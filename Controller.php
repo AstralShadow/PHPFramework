@@ -8,9 +8,9 @@
 
 namespace Core;
 
-use Core\Request;
-use Core\Exception;
-use Core\RequestResponse;
+use \Core\Request;
+use \Core\Exception;
+use \Core\RequestResponse;
 use \ReflectionClass;
 use \PDO;
 

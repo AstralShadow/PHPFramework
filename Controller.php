@@ -107,7 +107,7 @@ class Controller
      * @throws Exception
      */
     private function setDefaultModule($default = null): void {
-        $modules = $this->getModuleNames();
+        $modules = getModuleNames();
         if (!in_array($default, $modules)){
             throw new Exception("The specified default module does not exist");
         }
@@ -121,22 +121,6 @@ class Controller
     }
 
     /**
-     * Scan for avaliable module names
-     * Do not check if they are valid.
-     * @return array
-     */
-    private function getModuleNames(): array {
-        $names = [];
-        foreach (scandir("Modules") as $name){
-            if (!strpos($name, '.php')){
-                continue;
-            }
-            $names[] = 'Modules\\' . str_replace('.php', '', $name);
-        }
-        return $names;
-    }
-
-    /**
      * Check if the request points to real Module
      * @return void
      * @throws Exception
@@ -144,7 +128,7 @@ class Controller
     private function validateRequest(): void {
         $module = $this->request->module();
 
-        if (!$this->isModule($module)){
+        if (!isModule($module)){
             throw new Exception("$module does not inherit Core\Module");
         }
     }
@@ -156,18 +140,6 @@ class Controller
     private function loadModule(): void {
         $module_name = $this->request->module();
         $this->module = new $module_name($this, $this, $this);
-    }
-
-    /**
-     * Check if module implements Core\Module
-     * Load the module if not loaded.
-     * @param string $name
-     * @return bool
-     */
-    private function isModule(string $name): bool {
-        $a = new ReflectionClass($name);
-        $parent = $a->getParentClass();
-        return $parent->getName() == 'Core\\Module';
     }
 
 }

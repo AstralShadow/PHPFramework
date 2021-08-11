@@ -19,7 +19,45 @@ abstract class Entity
 
     protected static string $tableName;
     protected static string $idName = "id";
+    private static array $referencedLists;
+    private static array $cache;
     private int $id;
+    private static int $cacheUsed = 0;
+    private static int $entitiesLoaded = 0;
+
+    /**
+     * Populates $referencedFrom
+     * Includes all referenced classes (autoloader)
+     * @return void
+     */
+    public static function init(): void {
+        $class = get_called_class();
+        self::$cache[$class] = [];
+        self::$referencedLists[$class] = [];
+
+        $entity = new \ReflectionClass($class);
+        $isEntityFilter = function (\ReflectionProperty $property){
+            if ($property->isStatic()){
+                return false;
+            }
+            $type = $property->getType();
+            if (!isset($type) || $type->isBuiltin()){
+                return false;
+            }
+
+            return isEntity($type->getName());
+        };
+        $flags = \ReflectionProperty::IS_PROTECTED | \ReflectionProperty::IS_PUBLIC;
+        $properties = array_filter($entity->getProperties($flags), $isEntityFilter);
+
+        foreach ($properties as $property){
+            $typeName = $property->getType()->getName();
+            if (!isset(self::$referencedLists[$typeName])){
+                self::$referencedLists[$typeName] = [];
+            }
+            self::$referencedLists[$typeName][] = $property;
+        }
+    }
 
     /**
      * Creates an object in the database
@@ -52,6 +90,9 @@ abstract class Entity
         $statement->execute();
 
         $this->id = $dbh->lastInsertId();
+
+        $class = get_called_class();
+        self::$cache[$class][(int) $this->getId()] = &$this;
     }
 
     /**
@@ -60,30 +101,35 @@ abstract class Entity
      * @return void
      */
     private function morph(array $data): void {
+        self::$entitiesLoaded++;
         $entity = new \ReflectionClass($this);
-        $properties = $entity->getProperties();
+        $flags = \ReflectionProperty::IS_PROTECTED | \ReflectionProperty::IS_PUBLIC;
+        $properties = $entity->getProperties($flags);
         foreach ($properties as $property){
             $name = $property->getName();
             if ($property->isStatic() || !isset($data[$name])){
                 continue;
             }
-            $typeName = $property->getType()->getName();
+            $type = $property->getType();
+            $typeName = $type->getName();
 
-            if ($typeName == 'DateTime'){
-                $data[$name] = new \DateTime($data[$name]);
-                $property->setValue($this, $data[$name]);
-                continue;
-            }
+            if (!$type->isBuiltin()){
+                if ($typeName == 'DateTime'){
+                    $data[$name] = new \DateTime($data[$name]);
+                    $this->$name = $data[$name];
+                    continue;
+                }
 
-            if (class_exists($typeName)){
-                $class = new \ReflectionClass($typeName);
-                $parent = $class->getParentClass();
-                if ($parent == new \ReflectionClass(get_class())){
-                    $className = $class->getName();
-                    $data[$name] = $className::get($data[$name]);
+                if (isEntity($typeName)){
+                    $class = new \ReflectionClass($typeName);
+                    $parent = $class->getParentClass();
+                    if ($parent == new \ReflectionClass(get_class())){
+                        $className = $class->getName();
+                        $data[$name] = $className::get($data[$name]);
+                    }
                 }
             }
-            $property->setValue($this, $data[$name]);
+            $this->$name = $data[$name];
         }
     }
 
@@ -98,6 +144,7 @@ abstract class Entity
     /**
      * Saves the object in the database
      * @throws Exception
+     * @return void
      */
     public function save(): void {
         $dbh = self::getPDO();
@@ -109,9 +156,6 @@ abstract class Entity
 
         $data = self::resolveReferences($properties);
         $keys = array_keys($data);
-        $prefixedKeys = array_map(function ($k){
-            return ":$k";
-        }, $keys);
 
         $set_clause = "";
         if (count($keys)){
@@ -139,15 +183,46 @@ abstract class Entity
     }
 
     /**
+     * Reloads object from database.
+     * It's not recursive.
+     * @return void
+     */
+    public function load(): void {
+        $dbh = self::getPDO();
+        $class = get_called_class();
+        $tableName = $class::$tableName;
+        $idName = $class::$idName;
+
+        $statement = $dbh->prepare(<<<EOF
+            SELECT *
+            FROM $tableName 
+            WHERE $idName = :id;
+        EOF);
+        $id = $this->getId();
+        $statement->bindParam(":id", $id);
+        $statement->execute();
+
+        $data = $statement->fetch(\PDO::FETCH_ASSOC);
+        if ($data){
+            $this->morph($data);
+        }
+    }
+
+    /**
      * Returns an object by id
      * @param int $id
      * @return Entity
      */
-    public static function get(int $id): Entity {
+    public static function &get(int $id): ?Entity {
         $dbh = self::getPDO();
-        $entity = new \ReflectionClass(get_called_class());
-        $tableName = $entity->getStaticPropertyValue("tableName");
-        $idName = $entity->getStaticPropertyValue("idName");
+        $class = get_called_class();
+        $tableName = $class::$tableName;
+        $idName = $class::$idName;
+
+        if (isset(self::$cache[$class][(int) $id])){
+            self::$cacheUsed++;
+            return self::$cache[$class][(int) $id];
+        }
 
         $statement = $dbh->prepare(<<<EOF
             SELECT *
@@ -158,11 +233,17 @@ abstract class Entity
         $statement->execute();
 
         $data = $statement->fetch(\PDO::FETCH_ASSOC);
-        $user = $entity->newInstanceWithoutConstructor();
-        $user->id = $data[$idName];
-        $user->morph($data);
+        if (!$data){
+            return null;
+        }
+        $entity = new \ReflectionClass($class);
+        $object = $entity->newInstanceWithoutConstructor();
+        $object->id = $data[$idName];
+        $object->morph($data);
 
-        return $user;
+        self::$cache[$class][(int) $id] = &$object;
+
+        return $object;
     }
 
     /**
@@ -172,9 +253,9 @@ abstract class Entity
      */
     public static function find(array $conditions): array {
         $dbh = self::getPDO();
-        $entity = new \ReflectionClass(get_called_class());
-        $tableName = $entity->getStaticPropertyValue("tableName");
-        $idName = $entity->getStaticPropertyValue("idName");
+        $class = get_called_class();
+        $tableName = $class::$tableName;
+        $idName = $class::$idName;
 
         $data = self::resolveReferences($conditions);
         $keys = array_keys($data);
@@ -199,18 +280,23 @@ abstract class Entity
 
         $statement->execute();
 
-        $users = [];
-        foreach ($statement as $user){
-            $users[] = self::get($user[0]);
+        $objects = [];
+        foreach ($statement as $object){
+            $objects[] = &self::get($object[0]);
         }
-        return $users;
+        return $objects;
     }
 
+    /**
+     * Deletes object from database by id
+     * @param int $id
+     * @return void
+     */
     public static function delete(int $id): void {
         $dbh = self::getPDO();
-        $entity = new \ReflectionClass(get_called_class());
-        $tableName = $entity->getStaticPropertyValue("tableName");
-        $idName = $entity->getStaticPropertyValue("idName");
+        $class = get_called_class();
+        $tableName = $class::$tableName;
+        $idName = $class::$idName;
 
         $statement = $dbh->prepare(<<<EOF
             DELETE FROM $tableName
@@ -219,6 +305,10 @@ abstract class Entity
 
         $statement->bindParam(':id', $id);
         $statement->execute();
+
+        if (isset(self::$cache[$class][(int) $id])){
+            unset(self::$cache[$class][(int) $id]);
+        }
     }
 
     /**
@@ -227,7 +317,8 @@ abstract class Entity
      */
     private function getDefinedProperties(): array {
         $entity = new \ReflectionObject($this);
-        $properties = $entity->getProperties();
+        $flags = \ReflectionProperty::IS_PROTECTED | \ReflectionProperty::IS_PUBLIC;
+        $properties = $entity->getProperties($flags);
         $data = [];
         foreach ($properties as $property){
             if (!$property->isStatic()){
@@ -268,6 +359,67 @@ abstract class Entity
             throw new Exception("You may not use Entities without specifying database.");
         }
         return $dbh;
+    }
+
+    /**
+     * Prints statistics about database and cache usage.
+     * @return void
+     */
+    public static function printDebugStats(): void {
+        echo "Loaded entities: " . self::$entitiesLoaded . " entities <br />\n";
+        echo "Cache used: " . self::$cacheUsed . " times <br />\n";
+    }
+
+    /**
+     * 
+     * @param string $name
+     * @param array $arguments
+     */
+    public function __call(string $name, array $arguments) {
+        
+    }
+
+    /**
+     * Returns list of traceable references.
+     * This function is only for debugging.
+     * @return array
+     */
+    public static function listReferenceTraces(): array {
+        $name = get_called_class();
+        $traces = $name::getReferenceTraces();
+        $info = [];
+        foreach ($traces as [$property, $trace]){
+            $traceName = $trace->getArguments()[0];
+            $className = $property->class;
+            $shortName = $property->getDeclaringClass()->getShortName();
+            $propertyName = $property->getName();
+
+            $info[$traceName] = "Performs find() operation on $className";
+            $info[$traceName] .= " where $shortName::$propertyName == \$this";
+        }
+        return $info;
+    }
+
+    private static function getReferenceTraces(): array {
+        $name = get_called_class();
+        $references = self::$referencedLists[$name];
+        $response = [];
+        foreach ($references as $property){
+            $class = $property->getDeclaringClass();
+            $name = $class->getShortName();
+            $trace = null;
+            foreach ($property->getAttributes() as $attribute){
+                if (strpos($attribute->getName(), "traceable") !== false){
+                    $trace = $attribute;
+                    continue;
+                }
+            }
+            if (!isset($trace)){
+                continue;
+            }
+            $response[] = [$property, $trace];
+        }
+        return $response;
     }
 
 }

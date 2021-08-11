@@ -6,12 +6,14 @@
  * and open the template in the editor.
  */
 
+require "Core/utils.php";
 
 spl_autoload_register(function (string $class): void{
 
     $file = str_replace('\\', '/', $class . '.php');
     if (file_exists($file)){
         require $file;
+        \Core\initClass($class);
         return;
     }
 
@@ -33,4 +35,5 @@ spl_autoload_register(function (string $class): void{
 
     $path = array_map('strtolower', explode('/', $file));
     $caseInsensitiveLoader($path);
+    \Core\initClass($class);
 });

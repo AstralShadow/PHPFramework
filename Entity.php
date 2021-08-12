@@ -19,8 +19,9 @@ abstract class Entity
 
     protected static string $tableName;
     protected static string $idName = "id";
-    private static array $referencedLists;
-    private static array $cache;
+    private static array $referencedLists = [];
+    private static array $cache = [];
+    private static array $initialized = [];
     private int $id;
     private static int $cacheUsed = 0;
     private static int $entitiesLoaded = 0;
@@ -32,6 +33,10 @@ abstract class Entity
      */
     public static function init(): void {
         $class = get_called_class();
+        if (in_array($class, self::$initialized)){
+            return;
+        }
+        self::$initialized[] = $class;
         self::$cache[$class] = [];
         self::$referencedLists[$class] = [];
 
@@ -376,7 +381,21 @@ abstract class Entity
      * @param array $arguments
      */
     public function __call(string $name, array $arguments) {
-        
+        $traces = $this->getReferenceTraces();
+        foreach ($traces as [$property, $trace]){
+            if ($trace->getArguments()[0] !== $name){
+                continue;
+            }
+            $targetClass = $property->class;
+            $propertyName = $property->getName();
+            $condition = [];
+            if (isset($arguments[0]) && is_array($arguments[0])){
+                $condition = $arguments[0];
+            }
+            $condition[$propertyName] = $this;
+
+            return $targetClass::find($condition);
+        }
     }
 
     /**

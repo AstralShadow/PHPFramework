@@ -8,6 +8,11 @@
 
 namespace Core;
 
+use Core\Attributes\Table;
+use Core\Attributes\PrimaryKey;
+use Core\Attributes\Traceable;
+use Core\Attributes\TraceLazyLoad;
+
 /**
  * Base class for database models
  * You should define all types of all variables in your class;
@@ -17,14 +22,53 @@ namespace Core;
 abstract class Entity
 {
 
-    protected static string $tableName;
-    protected static string $idName = "id";
+    /**
+     * Used for resolving traceable references
+     * @var array
+     */
     private static array $referencedLists = [];
-    private static array $cache = [];
+
+    /**
+     * Caching all objects
+     * @var array
+     */
+    private static array $objectCache = [];
+
+    /**
+     * List of loaded entity classes 
+     * @var array
+     */
     private static array $initialized = [];
-    private int $id;
+
+    /**
+     * Caches table names. Used by getTableName()
+     * @var array
+     */
+    private static array $tableNamesCache;
+
+    /**
+     * Caches primary keys names. Used by getPrimaryKeys()
+     * @var array
+     */
+    private static array $primaryKeysCache;
+
+    /**
+     * Cache use count. (Debugging Stats)
+     * @var int
+     */
     private static int $cacheUsed = 0;
+
+    /**
+     * Loaded SQL Objects. (Debugging Stats) 
+     * @var int
+     */
     private static int $entitiesLoaded = 0;
+
+    /**
+     * Current object's id
+     * @var int|array
+     */
+    private $id;
 
     /**
      * Populates $referencedFrom
@@ -37,7 +81,7 @@ abstract class Entity
             return;
         }
         self::$initialized[] = $class;
-        self::$cache[$class] = [];
+        self::$objectCache[$class] = [];
         self::$referencedLists[$class] = [];
 
         $entity = new \ReflectionClass($class);
@@ -70,8 +114,7 @@ abstract class Entity
      */
     public function __construct() {
         $dbh = self::getPDO();
-        $entity = new \ReflectionClass($this);
-        $tableName = $entity->getStaticPropertyValue("tableName");
+        $tableName = self::getTableName();
         $properties = $this->getDefinedProperties();
 
         $data = self::resolveReferences($properties);
@@ -93,11 +136,44 @@ abstract class Entity
         }
 
         $statement->execute();
-
-        $this->id = $dbh->lastInsertId();
+        $this->resolveId(true);
 
         $class = get_called_class();
-        self::$cache[$class][(int) $this->getId()] = &$this;
+        $id = $this->getId();
+        if (!is_array($id)){
+            $id = [$id];
+        }
+        $idHash = serialize($id);
+        self::$objectCache[$class][$idHash] = &$this;
+    }
+
+    /**
+     * Sets id after inserting element
+     * @return void
+     */
+    private function resolveId(bool $justInserted = false): void {
+        if (isset($this->id)){
+            return;
+        }
+        $keys = self::getPrimaryKeys();
+        $defined = true;
+        $values = [];
+        foreach ($keys as $key){
+            if (!isset($this->$key)){
+                $defined = false;
+                break;
+            }
+            $values[] = $this->$key;
+        }
+        if ($defined){
+            $values = self::resolveReferences($values);
+            $this->setId(...$values);
+        } else if (count($keys) == 1 && $justInserted){
+            $pdo = self::getPDO();
+            $this->setId($pdo->lastInsertId());
+        } else {
+            throw new Exception("Can not resolve id of inserted element.");
+        }
     }
 
     /**
@@ -140,10 +216,23 @@ abstract class Entity
 
     /**
      * Returns the entity's id
-     * @return int
+     * @return mixed|array
      */
-    public function getId(): int {
+    public function getId() {
         return $this->id;
+    }
+
+    /**
+     * Defines id of entity
+     * @param mixed|array $id
+     * @return void
+     */
+    protected function setId(...$id): void {
+        if (count($id) == 1){
+            $this->id = $id[0];
+        } else {
+            $this->id = $id;
+        }
     }
 
     /**
@@ -154,8 +243,9 @@ abstract class Entity
     public function save(): void {
         $dbh = self::getPDO();
         $entity = new \ReflectionClass($this);
-        $tableName = $entity->getStaticPropertyValue("tableName");
+        $tableName = self::getTableName();
         $idName = $entity->getStaticPropertyValue("idName");
+        var_dump($tableName . "; " . $idName);
 
         $properties = $this->getDefinedProperties();
 
@@ -176,7 +266,8 @@ abstract class Entity
             WHERE $idName = :id;
         EOF);
 
-        $statement->bindParam(':id', $this->id);
+        $id = $this->getId();
+        $statement->bindParam(':id', $id);
 
         foreach ($keys as $key){
             $statement->bindParam($key, $data[$key]);
@@ -184,7 +275,7 @@ abstract class Entity
 
         $statement->execute();
 
-        $this->id = $dbh->lastInsertId();
+        $this->setId($dbh->lastInsertId());
     }
 
     /**
@@ -193,19 +284,32 @@ abstract class Entity
      * @return void
      */
     public function load(): void {
+        $this->resolveId();
         $dbh = self::getPDO();
-        $class = get_called_class();
-        $tableName = $class::$tableName;
-        $idName = $class::$idName;
+        $tableName = self::getTableName();
+        $keys = self::getPrimaryKeys();
+        $id = $this->getId();
+        if (!is_array($id) && isset($id)){
+            $id = [$id];
+        }
+
+        if (count($id) == 0 || count($id) != count($keys)){
+            throw new Exception("Incorrect number of primary keys.");
+        }
+
+        $queryCondition = "$keys[0] = ?";
+        for ($i = 1; $i < count($keys); $i++){
+            $key = $keys[$i];
+            $queryCondition .= " AND $key = ?";
+        }
 
         $statement = $dbh->prepare(<<<EOF
             SELECT *
             FROM $tableName 
-            WHERE $idName = :id;
+            WHERE $queryCondition;
         EOF);
-        $id = $this->getId();
-        $statement->bindParam(":id", $id);
-        $statement->execute();
+
+        $statement->execute($id);
 
         $data = $statement->fetch(\PDO::FETCH_ASSOC);
         if ($data){
@@ -214,39 +318,51 @@ abstract class Entity
     }
 
     /**
-     * Returns an object by id
-     * @param int $id
+     * Returns an object by primary key
+     * @param mixed|array $id
      * @return Entity
      */
-    public static function &get(int $id): ?Entity {
+    public static function &get(...$id): ?Entity {
         $dbh = self::getPDO();
-        $class = get_called_class();
-        $tableName = $class::$tableName;
-        $idName = $class::$idName;
+        $className = get_called_class();
+        $tableName = self::getTableName();
+        $keys = self::getPrimaryKeys();
 
-        if (isset(self::$cache[$class][(int) $id])){
+        if (count($id) == 0 || count($id) != count($keys)){
+            throw new Exception("Incorrect number of primary keys.");
+        }
+        $id = self::resolveReferences($id);
+
+        $idHash = serialize($id);
+        if (isset(self::$objectCache[$className][$idHash])){
             self::$cacheUsed++;
-            return self::$cache[$class][(int) $id];
+            return self::$objectCache[$className][$idHash];
+        }
+
+        $queryCondition = "$keys[0] = ?";
+        for ($i = 1; $i < count($keys); $i++){
+            $key = $keys[$i];
+            $queryCondition .= " AND $key = ?";
         }
 
         $statement = $dbh->prepare(<<<EOF
             SELECT *
-            FROM $tableName 
-            WHERE $idName = :id;
+            FROM $tableName
+            WHERE $queryCondition;
         EOF);
-        $statement->bindParam(":id", $id);
-        $statement->execute();
+        $statement->execute($id);
 
         $data = $statement->fetch(\PDO::FETCH_ASSOC);
         if (!$data){
-            return null;
+            $dummy = null;
+            return $dummy;
         }
-        $entity = new \ReflectionClass($class);
+        $entity = new \ReflectionClass($className);
         $object = $entity->newInstanceWithoutConstructor();
-        $object->id = $data[$idName];
+        $object->setId(...$id);
         $object->morph($data);
 
-        self::$cache[$class][(int) $id] = &$object;
+        self::$objectCache[$className][$idHash] = &$object;
 
         return $object;
     }
@@ -258,9 +374,8 @@ abstract class Entity
      */
     public static function find(array $conditions): array {
         $dbh = self::getPDO();
-        $class = get_called_class();
-        $tableName = $class::$tableName;
-        $idName = $class::$idName;
+        $tableName = self::getTableName();
+        $primaryKeys = self::getPrimaryKeys();
 
         $data = self::resolveReferences($conditions);
         $keys = array_keys($data);
@@ -273,8 +388,10 @@ abstract class Entity
             $conditionString = "WHERE " . implode(' AND ', $conditions);
         }
 
+        $primaryKeysList = implode(', ', $primaryKeys);
+
         $statement = $dbh->prepare(<<<EOF
-            SELECT $idName
+            SELECT $primaryKeysList
             FROM $tableName 
             $conditionString;
         EOF);
@@ -286,33 +403,50 @@ abstract class Entity
         $statement->execute();
 
         $objects = [];
-        foreach ($statement as $object){
-            $objects[] = &self::get($object[0]);
+        while ($data = $statement->fetch(\PDO::FETCH_NUM)){
+            $objects[] = &self::get(...$data);
         }
+
         return $objects;
     }
 
     /**
-     * Deletes object from database by id
-     * @param int $id
+     * Deletes object from database by primary key
+     * @param mixed|array $id
      * @return void
      */
-    public static function delete(int $id): void {
+    public static function delete(...$id): void {
         $dbh = self::getPDO();
         $class = get_called_class();
-        $tableName = $class::$tableName;
-        $idName = $class::$idName;
+        $tableName = self::getTableName();
+        $keys = self::getPrimaryKeys();
+
+        if (count($id) == 1 && count($keys) > 1 && $id[0] instanceof self){
+            self::delete(...$id[0]->getId());
+            return;
+        }
+
+        if (!count($id) || count($keys) != count($id)){
+            throw new Exception("Incorrect number of primary keys.");
+        }
+
+        $id = self::resolveReferences($id);
+
+        $condition = "$keys[0] = ?";
+        for ($i = 1; $i < count($keys); $i++){
+            $condition .= " AND $keys[$i] = ?";
+        }
 
         $statement = $dbh->prepare(<<<EOF
             DELETE FROM $tableName
-            WHERE $idName = :id;
+            WHERE $condition;
         EOF);
 
-        $statement->bindParam(':id', $id);
-        $statement->execute();
+        $statement->execute($id);
 
-        if (isset(self::$cache[$class][(int) $id])){
-            unset(self::$cache[$class][(int) $id]);
+        $idHash = serialize($id);
+        if (isset(self::$objectCache[$class][$idHash])){
+            unset(self::$objectCache[$class][$idHash]);
         }
     }
 
@@ -344,7 +478,7 @@ abstract class Entity
     private static function resolveReferences(array $properties): array {
         foreach ($properties as $key => $value){
             if ($value instanceof Entity){
-                $properties[$key] = $value->id;
+                $properties[$key] = $value->getId();
             }
             if ($value instanceof \DateTime){
                 $properties[$key] = $value->format("Y-m-d H:i:s");
@@ -376,16 +510,21 @@ abstract class Entity
     }
 
     /**
-     * 
-     * @param string $name
+     * Covers user-selected reference tracing functions
+     * @param string $method
      * @param array $arguments
      */
-    public function __call(string $name, array $arguments) {
+    public function __call(string $method, array $arguments) {
+        $className = get_called_class();
+
         $traces = $this->getReferenceTraces();
-        foreach ($traces as [$property, $trace]){
-            if ($trace->getArguments()[0] !== $name){
-                continue;
-            }
+        if (!in_array($method, array_keys($traces))){
+            self::loadLazyTrace($method);
+            $traces = $this->getReferenceTraces();
+        }
+
+        if (isset($traces[$method])){
+            $property = $traces[$method];
             $targetClass = $property->class;
             $propertyName = $property->getName();
             $condition = [];
@@ -396,6 +535,28 @@ abstract class Entity
 
             return $targetClass::find($condition);
         }
+
+        throw new Exception("$className::$method is not initialized.");
+    }
+
+    /**
+     * Loads methods named with TraceLazyLoad attribute on demand
+     * @param string $method
+     * @return void
+     */
+    private static function loadLazyTrace(string $method): void {
+        $self = new \ReflectionClass(get_called_class());
+        $attributes = $self->getAttributes();
+        foreach ($attributes as $attribute){
+            $instance = $attribute->newInstance();
+            if (!($instance instanceof TraceLazyLoad)){
+                continue;
+            }
+            if ($instance->contains($method)){
+                $instance->load();
+                return;
+            }
+        }
     }
 
     /**
@@ -404,21 +565,39 @@ abstract class Entity
      * @return array
      */
     public static function listReferenceTraces(): array {
-        $name = get_called_class();
-        $traces = $name::getReferenceTraces();
         $info = [];
-        foreach ($traces as [$property, $trace]){
-            $traceName = $trace->getArguments()[0];
+
+        $self = new \ReflectionClass(get_called_class());
+        $attributes = $self->getAttributes();
+        foreach ($attributes as $attribute){
+            $instance = $attribute->newInstance();
+            if (!($instance instanceof TraceLazyLoad)){
+                continue;
+            }
+            $class = $instance->getClassName();
+            foreach ($instance->getMethods() as $method){
+                $info[$method] = "Can be lazy loaded from $class";
+            }
+        }
+
+        $traces = self::getReferenceTraces();
+        foreach ($traces as $trace => $property){
             $className = $property->class;
             $shortName = $property->getDeclaringClass()->getShortName();
             $propertyName = $property->getName();
 
-            $info[$traceName] = "Performs find() operation on $className";
-            $info[$traceName] .= " where $shortName::$propertyName == \$this";
+            $info[$trace] = "Performs find() operation on $className";
+            $info[$trace] .= " where $shortName::$propertyName == \$this";
         }
         return $info;
     }
 
+    /**
+     * Returns array of pairs ($parameter, $method)
+     * $parameter is the parameter that references this class.
+     * $method is the name of the method that this class need to have
+     * @return array
+     */
     private static function getReferenceTraces(): array {
         $name = get_called_class();
         $references = self::$referencedLists[$name];
@@ -428,17 +607,68 @@ abstract class Entity
             $name = $class->getShortName();
             $trace = null;
             foreach ($property->getAttributes() as $attribute){
-                if (strpos($attribute->getName(), "traceable") !== false){
-                    $trace = $attribute;
+                $instance = $attribute->newInstance();
+                if ($instance instanceof Traceable){
+                    $trace = $instance->getName();
                     continue;
                 }
             }
             if (!isset($trace)){
                 continue;
             }
-            $response[] = [$property, $trace];
+            $response[$trace] = $property;
         }
         return $response;
+    }
+
+    /**
+     * Buffers and returns table name per called class
+     * @param string $className
+     * @return string
+     * @throws Exception
+     */
+    private static function getTableName(string $className = null): string {
+        $name = $className ?? get_called_class();
+        if (isset(self::$tableNamesCache[$name])){
+            return self::$tableNamesCache[$name];
+        }
+
+        $class = new \ReflectionClass($name);
+        foreach ($class->getAttributes() as $attr){
+            $instance = $attr->newInstance();
+            if ($instance instanceof Table){
+                $tableName = $instance->getTable();
+                self::$tableNamesCache[$name] = $tableName;
+                return $tableName;
+            }
+        }
+        throw new Exception("Table name for $name is not defined");
+    }
+
+    /**
+     * Buffers and returns primary keys per called class
+     * @param string $className
+     * @return array
+     * @throws Exception
+     */
+    private static function getPrimaryKeys(string $className = null): array {
+        $name = $className ?? get_called_class();
+        if (isset(self::$primaryKeysCache[$name])){
+            return self::$primaryKeysCache[$name];
+        }
+
+        $class = new \ReflectionClass($name);
+        foreach ($class->getAttributes() as $attr){
+            $instance = $attr->newInstance();
+            if ($instance instanceof PrimaryKey){
+                $keys = $instance->getKeys();
+                if (count($keys)){
+                    self::$primaryKeysCache[$name] = $keys;
+                    return $keys;
+                }
+            }
+        }
+        throw new Exception("Primary keys for $name are not defined");
     }
 
 }

@@ -15,7 +15,7 @@ use Core\Attributes\TraceLazyLoad;
 
 /**
  * Base class for database models
- * You should define all types of all variables in your class;
+ * You should define all types of all variables in your class
  *
  * @author azcraft
  */
@@ -131,6 +131,10 @@ abstract class Entity
             VALUES ($statement_values);
         EOF);
 
+        if (defined("DEBUG_PRINT_QUERY_TYPES")){
+            echo get_called_class() . " [SQL] insert element. <br />\n";
+        }
+
         foreach ($keys as $key){
             $statement->bindParam($key, $data[$key]);
         }
@@ -143,7 +147,7 @@ abstract class Entity
         if (!is_array($id)){
             $id = [$id];
         }
-        $idHash = serialize($id);
+        $idHash = self::hashIds($id);
         self::$objectCache[$class][$idHash] = &$this;
     }
 
@@ -266,6 +270,10 @@ abstract class Entity
             WHERE $idName = :id;
         EOF);
 
+        if (defined("DEBUG_PRINT_QUERY_TYPES")){
+            echo get_called_class() . " [SQL] save element. <br />\n";
+        }
+
         $id = $this->getId();
         $statement->bindParam(':id', $id);
 
@@ -309,6 +317,10 @@ abstract class Entity
             WHERE $queryCondition;
         EOF);
 
+        if (defined("DEBUG_PRINT_QUERY_TYPES")){
+            echo get_called_class() . " [SQL] load element. <br />\n";
+        }
+
         $statement->execute($id);
 
         $data = $statement->fetch(\PDO::FETCH_ASSOC);
@@ -333,7 +345,7 @@ abstract class Entity
         }
         $id = self::resolveReferences($id);
 
-        $idHash = serialize($id);
+        $idHash = self::hashIds($id);
         if (isset(self::$objectCache[$className][$idHash])){
             self::$cacheUsed++;
             return self::$objectCache[$className][$idHash];
@@ -350,6 +362,9 @@ abstract class Entity
             FROM $tableName
             WHERE $queryCondition;
         EOF);
+        if (defined("DEBUG_PRINT_QUERY_TYPES")){
+            echo get_called_class() . " [SQL] get element. <br />\n";
+        }
         $statement->execute($id);
 
         $data = $statement->fetch(\PDO::FETCH_ASSOC);
@@ -393,6 +408,10 @@ abstract class Entity
             $conditionString;
         EOF);
 
+        if (defined("DEBUG_PRINT_QUERY_TYPES")){
+            echo get_called_class() . " [SQL] find elements. <br />\n";
+        }
+
         foreach ($keys as $key){
             $statement->bindParam($key, $data[$key]);
         }
@@ -406,7 +425,7 @@ abstract class Entity
             foreach ($primaryKeys as $prim){
                 $id[] = $data[$prim];
             }
-            $idHash = serialize($id);
+            $idHash = self::hashIds($id);
             if (isset(self::$objectCache[$className][$idHash])){
                 self::$cacheUsed++;
                 $objects[] = &self::$objectCache[$className][$idHash];
@@ -457,9 +476,13 @@ abstract class Entity
             WHERE $condition;
         EOF);
 
+        if (defined("DEBUG_PRINT_QUERY_TYPES")){
+            echo get_called_class() . " [SQL] delete element. <br />\n";
+        }
+
         $statement->execute($id);
 
-        $idHash = serialize($id);
+        $idHash = self::hashIds($id);
         if (isset(self::$objectCache[$class][$idHash])){
             unset(self::$objectCache[$class][$idHash]);
         }
@@ -684,6 +707,18 @@ abstract class Entity
             }
         }
         throw new Exception("Primary keys for $name are not defined");
+    }
+
+    /**
+     * Returns hash of array of resolved ids
+     * @param array $ids
+     * @return string
+     */
+    private static function hashIds(array $ids): string {
+        foreach ($ids as $k => $id){
+            $ids[$k] = (string) $id;
+        }
+        return serialize($ids);
     }
 
 }

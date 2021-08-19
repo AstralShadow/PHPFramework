@@ -27,7 +27,7 @@ class Traceable
         $this->name = $customFunctionName;
     }
 
-    public function getName(): string {
+    public function name(): string {
         return $this->name;
     }
 

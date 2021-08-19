@@ -35,11 +35,11 @@ class TraceLazyLoad
         $this->class::init();
     }
 
-    public function getMethods(): array {
+    public function methods(): array {
         return $this->methods;
     }
 
-    public function getClassName(): string {
+    public function className(): string {
         return $this->class;
     }
 

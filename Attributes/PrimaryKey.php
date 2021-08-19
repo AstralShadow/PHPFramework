@@ -26,27 +26,8 @@ class PrimaryKey
         $this->keys = [...$primaryKeys];
     }
 
-    public function getKeys() {
+    public function keys() {
         return $this->keys;
     }
 
 }
-
-/*
-  'TARGET_CLASS' =>
-  int(1)
-  'TARGET_FUNCTION' =>
-  int(2)
-  'TARGET_METHOD' =>
-  int(4)
-  'TARGET_PROPERTY' =>
-  int(8)
-  'TARGET_CLASS_CONSTANT' =>
-  int(16)
-  'TARGET_PARAMETER' =>
-  int(32)
-  'TARGET_ALL' =>
-  int(63)
-  'IS_REPEATABLE' =>
-  int(64)
-*/

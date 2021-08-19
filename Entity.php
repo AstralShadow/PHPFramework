@@ -627,8 +627,8 @@ abstract class Entity
             if (!($instance instanceof TraceLazyLoad)){
                 continue;
             }
-            $class = $instance->getClassName();
-            foreach ($instance->getMethods() as $method){
+            $class = $instance->className();
+            foreach ($instance->methods() as $method){
                 $info[$method] = "Can be lazy loaded from $class";
             }
         }
@@ -662,7 +662,7 @@ abstract class Entity
             foreach ($property->getAttributes() as $attribute){
                 $instance = $attribute->newInstance();
                 if ($instance instanceof Traceable){
-                    $trace = $instance->getName();
+                    $trace = $instance->name();
                     continue;
                 }
             }
@@ -690,7 +690,7 @@ abstract class Entity
         foreach ($class->getAttributes() as $attr){
             $instance = $attr->newInstance();
             if ($instance instanceof Table){
-                $tableName = $instance->getTable();
+                $tableName = $instance->table();
                 self::$tableNamesCache[$name] = $tableName;
                 return $tableName;
             }
@@ -714,7 +714,7 @@ abstract class Entity
         foreach ($class->getAttributes() as $attr){
             $instance = $attr->newInstance();
             if ($instance instanceof PrimaryKey){
-                $keys = $instance->getKeys();
+                $keys = $instance->keys();
                 if (count($keys)){
                     self::$primaryKeysCache[$name] = $keys;
                     return $keys;

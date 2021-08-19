@@ -25,7 +25,7 @@ class Table
         $this->table = $table;
     }
 
-    public function getTable() {
+    public function table() {
         return $this->table;
     }
 

@@ -8,10 +8,11 @@
 
 namespace Core;
 
-use \Core\Request;
-use \Core\Exception;
-use \Core\RequestResponse;
-use \PDO;
+use Core\Request;
+use Core\Exception;
+use Core\RequestResponse;
+use Core\RouteTable;
+use PDO;
 
 /**
  * Serves http request
@@ -22,10 +23,11 @@ use \PDO;
 class Controller
 {
 
+    private static ?PDO $pdo = null;
     private Request $request;
     private string $module;
+    private RouteTable $router;
     private RequestResponse $response;
-    private static ?PDO $pdo = null;
 
     /**
      * Parses the request from $_SERVER and loads the module.
@@ -34,8 +36,7 @@ class Controller
     public function __construct(string $defaultModule) {
         $this->parseRequest();
         $this->setDefaultModule('Modules\\' . $defaultModule);
-        $this->validateRequest();
-        $this->loadModule();
+        $this->loadModuleRouter();
     }
 
     /**
@@ -72,12 +73,12 @@ class Controller
     }
 
     /**
-     * Asks the module to respond the request
+     * Asks the RouteTable to process the Request
      * Stores and returns the response
      * @return RequestResponse
      */
     public function execute(): RequestResponse {
-        $response = $this->module::run($this->request);
+        $response = $this->router->process($this->request);
         $this->response = $response;
         return $response;
     }
@@ -87,8 +88,7 @@ class Controller
      * @return void
      */
     public function serve(): void {
-        $response = $this->response;
-        $response->serve();
+        $this->response->serve();
     }
 
     /**
@@ -120,26 +120,13 @@ class Controller
     }
 
     /**
-     * Check if the request points to real Module
-     * @return void
-     * @throws Exception
-     */
-    private function validateRequest(): void {
-        $module = $this->request->module();
-
-        if (!isModule($module)){
-            throw new Exception("$module does not inherit Core\Module");
-        }
-    }
-
-    /**
-     * Create private instance of the requested module 
+     * Parses module routes
      * @return void
      */
-    private function loadModule(): void {
-        $module_name = $this->request->module();
-        $this->module = $module_name;
-        $module_name::load($this);
+    private function loadModuleRouter(): void {
+        $name = $this->request->module();
+        $this->router = new RouteTable();
+        $this->router->loadModule($name);
     }
 
 }

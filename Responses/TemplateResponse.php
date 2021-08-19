@@ -26,8 +26,8 @@ class TemplateResponse implements RequestResponse
      * Sets http response code
      * @param int $httpResponseCode
      */
-    public function __construct(int $httpResponseCode = 200, string $file = "default.html") {
-        http_response_code($httpResponseCode);
+    public function __construct(int $code = 200, string $file = "default.html") {
+        http_response_code($code);
         $this->template = new Template($file);
     }
 

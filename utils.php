@@ -18,8 +18,7 @@ use \ReflectionClass;
  */
 function isModule(string $name): bool {
     $class = new ReflectionClass($name);
-    $parent = $class->getParentClass();
-    return $parent && $parent->getName() == 'Core\\Module';
+    return $class->getNamespaceName() === "Modules";
 }
 
 /**

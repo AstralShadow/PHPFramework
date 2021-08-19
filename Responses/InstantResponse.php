@@ -23,8 +23,8 @@ class InstantResponse implements RequestResponse
      * Sets http response code
      * @param int $httpResponseCode
      */
-    public function __construct(int $httpResponseCode = 200) {
-        http_response_code($httpResponseCode);
+    public function __construct(int $code = 200) {
+        http_response_code($code);
     }
 
     /**

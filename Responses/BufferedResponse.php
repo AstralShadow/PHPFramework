@@ -21,8 +21,8 @@ class BufferedResponse extends InstantResponse
      * Sets http response code
      * @param int $httpResponseCode
      */
-    public function __constructor(int $httpResponseCode = 200) {
-        http_response_code($httpResponseCode);
+    public function __constructor(int $code = 200) {
+        http_response_code($code);
         ob_start();
     }
 

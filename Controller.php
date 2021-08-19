@@ -11,7 +11,6 @@ namespace Core;
 use \Core\Request;
 use \Core\Exception;
 use \Core\RequestResponse;
-use \ReflectionClass;
 use \PDO;
 
 /**
@@ -24,7 +23,7 @@ class Controller
 {
 
     private Request $request;
-    private Module $module;
+    private string $module;
     private RequestResponse $response;
     private static ?PDO $pdo = null;
 
@@ -78,7 +77,7 @@ class Controller
      * @return RequestResponse
      */
     public function execute(): RequestResponse {
-        $response = $this->module->run($this->request);
+        $response = $this->module::run($this->request);
         $this->response = $response;
         return $response;
     }
@@ -139,7 +138,8 @@ class Controller
      */
     private function loadModule(): void {
         $module_name = $this->request->module();
-        $this->module = new $module_name($this, $this, $this);
+        $this->module = $module_name;
+        $module_name::load($this);
     }
 
 }

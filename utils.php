@@ -41,21 +41,21 @@ function isEntity(string $name): bool {
  */
 function initClass(string $name): void {
     if (isModule($name)){
-        if (defined("DEBUG_STATUS_STRING")){
+        if (defined("DEBUG_AUTOLOAD_LOG")){
             echo "[+] $name (Module) <br />\n";
         }
         return;
     }
 
     if (isEntity($name)){
-        if (defined("DEBUG_STATUS_STRING")){
+        if (defined("DEBUG_AUTOLOAD_LOG")){
             echo "[+] $name (Entity) <br />\n";
         }
         $name::init();
         return;
     }
 
-    if (defined("DEBUG_STATUS_STRING")){
+    if (defined("DEBUG_AUTOLOAD_LOG")){
         echo "[+] $name <br />\n";
     }
 }

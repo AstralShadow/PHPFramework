@@ -16,11 +16,11 @@ namespace Core;
 abstract class Module
 {
 
-    protected Controller $controller;
+    protected static Controller $controller;
 
-    public function __construct(Controller $controller) {
-        $this->controller = $controller;
+    public static function load(Controller $controller): void {
+        self::$controller = $controller;
     }
 
-    abstract public function run(Request $request): RequestResponse;
+    abstract public static function run(Request $request): RequestResponse;
 }

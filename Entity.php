@@ -65,6 +65,12 @@ abstract class Entity
     private static int $entitiesLoaded = 0;
 
     /**
+     * Done SQL Queries. (Debugging Stats) 
+     * @var int
+     */
+    private static int $queriesDone = 0;
+
+    /**
      * Current object's id
      * @var int|array
      */
@@ -131,6 +137,7 @@ abstract class Entity
             VALUES ($statement_values);
         EOF);
 
+        self::$queriesDone++;
         if (defined("DEBUG_PRINT_QUERY_TYPES")){
             echo get_called_class() . " [SQL] insert element. <br />\n";
         }
@@ -270,6 +277,7 @@ abstract class Entity
             WHERE $idName = :id;
         EOF);
 
+        self::$queriesDone++;
         if (defined("DEBUG_PRINT_QUERY_TYPES")){
             echo get_called_class() . " [SQL] save element. <br />\n";
         }
@@ -317,6 +325,7 @@ abstract class Entity
             WHERE $queryCondition;
         EOF);
 
+        self::$queriesDone++;
         if (defined("DEBUG_PRINT_QUERY_TYPES")){
             echo get_called_class() . " [SQL] load element. <br />\n";
         }
@@ -362,9 +371,12 @@ abstract class Entity
             FROM $tableName
             WHERE $queryCondition;
         EOF);
+
+        self::$queriesDone++;
         if (defined("DEBUG_PRINT_QUERY_TYPES")){
             echo get_called_class() . " [SQL] get element. <br />\n";
         }
+
         $statement->execute($id);
 
         $data = $statement->fetch(\PDO::FETCH_ASSOC);
@@ -408,6 +420,7 @@ abstract class Entity
             $conditionString;
         EOF);
 
+        self::$queriesDone++;
         if (defined("DEBUG_PRINT_QUERY_TYPES")){
             echo get_called_class() . " [SQL] find elements. <br />\n";
         }
@@ -476,6 +489,7 @@ abstract class Entity
             WHERE $condition;
         EOF);
 
+        self::$queriesDone++;
         if (defined("DEBUG_PRINT_QUERY_TYPES")){
             echo get_called_class() . " [SQL] delete element. <br />\n";
         }
@@ -543,6 +557,7 @@ abstract class Entity
      * @return void
      */
     public static function printDebugStats(): void {
+        echo "MySQL Queries: " . self::$queriesDone . " queries <br />\n";
         echo "Loaded entities: " . self::$entitiesLoaded . " entities <br />\n";
         echo "Cache used: " . self::$cacheUsed . " times <br />\n";
     }
@@ -716,9 +731,23 @@ abstract class Entity
      */
     private static function hashIds(array $ids): string {
         foreach ($ids as $k => $id){
-            $ids[$k] = (string) $id;
+            if (!is_numeric($id)){
+                $ids[$k] = (string) $id;
+                continue;
+            }
+
+            if ((float) $id == (int) $id){
+                $ids[$k] = (int) $id;
+                continue;
+            }
+
+            $ids[$k] = (float) $id;
         }
-        return serialize($ids);
+        if (count(self::getPrimaryKeys()) == 1){
+            return $ids[0];
+        } else {
+            return serialize($ids);
+        }
     }
 
 }

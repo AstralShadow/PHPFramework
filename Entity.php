@@ -359,10 +359,9 @@ abstract class Entity
         }
         $entity = new \ReflectionClass($className);
         $object = $entity->newInstanceWithoutConstructor();
+        self::$objectCache[$className][$idHash] = &$object;
         $object->setId(...$id);
         $object->morph($data);
-
-        self::$objectCache[$className][$idHash] = &$object;
 
         return $object;
     }
@@ -388,10 +387,8 @@ abstract class Entity
             $conditionString = "WHERE " . implode(' AND ', $conditions);
         }
 
-        $primaryKeysList = implode(', ', $primaryKeys);
-
         $statement = $dbh->prepare(<<<EOF
-            SELECT $primaryKeysList
+            SELECT *
             FROM $tableName 
             $conditionString;
         EOF);
@@ -403,8 +400,26 @@ abstract class Entity
         $statement->execute();
 
         $objects = [];
-        while ($data = $statement->fetch(\PDO::FETCH_NUM)){
-            $objects[] = &self::get(...$data);
+        $className = get_called_class();
+        while ($data = $statement->fetch(\PDO::FETCH_ASSOC)){
+            $id = [];
+            foreach ($primaryKeys as $prim){
+                $id[] = $data[$prim];
+            }
+            $idHash = serialize($id);
+            if (isset(self::$objectCache[$className][$idHash])){
+                self::$cacheUsed++;
+                $objects[] = &self::$objectCache[$className][$idHash];
+                continue;
+            }
+
+            $entity = new \ReflectionClass($className);
+            $object = $entity->newInstanceWithoutConstructor();
+            self::$objectCache[$className][$idHash] = &$object;
+            $object->setId(...$id);
+            $object->morph($data);
+
+            $objects[] = &$object;
         }
 
         return $objects;

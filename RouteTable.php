@@ -25,16 +25,7 @@ use Core\Routes\StartUp;
 class RouteTable
 {
 
-    private array $routes_get = [];
-    private array $routes_put = [];
-    private array $routes_post = [];
-    private array $routes_delete = [];
-
-    /**
-     * Fallback method. If not defined, a InstantResponse(404) is used
-     * @var ReflectionMethod
-     */
-    private ReflectionMethod $fallback;
+    private array $map = [];
 
     /**
      * Loads module into this route table.
@@ -94,15 +85,17 @@ class RouteTable
      * @return void
      */
     private function addRoute(object $attribute, ReflectionMethod $method): void {
-        if ($attribute instanceof NotFound){
-            $this->fallback = $method;
-            return;
-        }
-        var_dump($attribute, $method);
+        $path = $attribute->path();
+        var_dump($path, $method->getName());
     }
 
+    /**
+     * Executes the method that the routetable gives for the request path.
+     * @param Request $req
+     * @return RequestResponse
+     */
     public function process(Request $req): RequestResponse {
-        var_dump($req);
+        var_dump($req->args());
         return new Responses\InstantResponse(404);
     }
 

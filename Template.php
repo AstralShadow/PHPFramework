@@ -36,7 +36,7 @@ class Template
      * @param string $name
      * @param string $value
      */
-    public function setVar(string $name, string $value) {
+    public function setValue(string $name, string $value) {
         $this->variables[$name] = $value;
     }
 
@@ -44,7 +44,7 @@ class Template
      * Addes multiple variables to be replaced within the template file
      * @param array $variables
      */
-    public function setVars(array $variables) {
+    public function setValues(array $variables) {
         foreach ($variables as $name => $value){
             $this->variables[$name] = $value;
         }

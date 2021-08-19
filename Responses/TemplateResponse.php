@@ -49,8 +49,23 @@ class TemplateResponse implements RequestResponse
         echo $this->template->run();
     }
 
-    public function __call($name, $arguments) {
-        $this->template->$name(...$arguments);
+    /**
+     * Defines variable into the template namespace
+     * @param string $name
+     * @param string $value
+     * @return void
+     */
+    public function setValue(string $name, string $value): void {
+        $this->template->setValue($name, $value);
+    }
+
+    /**
+     * Defines multiple variables into the template namespace
+     * @param array $variables
+     * @return void
+     */
+    public function setValues(array $variables): void {
+        $this->template->setValues($variables);
     }
 
 }

@@ -26,7 +26,7 @@ class POST
         $this->path = $path;
     }
 
-    public function getPath(): string {
+    public function path(): string {
         return $this->path;
     }
 

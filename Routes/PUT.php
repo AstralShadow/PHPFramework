@@ -26,7 +26,7 @@ class PUT
         $this->path = $path;
     }
 
-    public function getPath(): string {
+    public function path(): string {
         return $this->path;
     }
 

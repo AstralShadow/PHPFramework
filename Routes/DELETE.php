@@ -9,6 +9,7 @@
 namespace Core\Routes;
 
 use Attribute;
+use Core\Request;
 
 /**
  * Marks this method to serve DELETE requests.
@@ -28,6 +29,10 @@ class DELETE
 
     public function path(): string {
         return $this->path;
+    }
+
+    public function method() {
+        return Request::METHOD_DELETE;
     }
 
 }

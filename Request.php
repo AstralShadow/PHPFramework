@@ -16,21 +16,23 @@ namespace Core;
 class Request implements \Serializable
 {
 
-    const METHOD_GET = "get";
-    const METHOD_PUT = "put";
-    const METHOD_POST = "post";
-    const METHOD_DELETE = "delete";
+    const METHOD_NONE = 0;
+    const METHOD_GET = 1;
+    const METHOD_PUT = 2;
+    const METHOD_POST = 4;
+    const METHOD_DELETE = 8;
+    const METHOD_ANY = 255;
 
     private ?string $module;
     private array $args = [];
-    private string $method = self::METHOD_GET;
+    private int $method = self::METHOD_NONE;
 
     public function __construct(?string $uri = null, ?string $method = null) {
-        if (!isset($uri, $method)){
-            $this->defineFromServerGlobals();
-        } else {
+        if (isset($uri, $method)){
             $this->defineFromString($uri);
             $this->setMethod($method || self::METHOD_GET);
+        } else {
+            $this->defineFromServerGlobals();
         }
     }
 
@@ -55,23 +57,40 @@ class Request implements \Serializable
      * Returns the Request's method
      * @return int The Request's method
      */
-    public function method(): string {
+    public function method(): int {
         return $this->method;
     }
 
     /**
      * Overwrites the request method
-     * @param string $method
+     * @param int|string $method
      * @return void
      * @throws Exception
      */
-    public function setMethod(string $method): void {
-        switch (strtolower($method)){
+    public function setMethod($method): void {
+        if (is_string($method)){
+            $method = strtolower($method);
+        }
+
+        switch ($method){
+            case "get":
             case self::METHOD_GET:
+                $this->module = self::METHOD_GET;
+                return;
+
+            case "put":
             case self::METHOD_PUT:
+                $this->module = self::METHOD_PUT;
+                return;
+
+            case "post":
             case self::METHOD_POST:
+                $this->module = self::METHOD_POST;
+                return;
+
+            case "delete":
             case self::METHOD_DELETE:
-                $this->module = strtolower($method);
+                $this->module = self::METHOD_DELETE;
                 return;
         }
 

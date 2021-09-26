@@ -9,6 +9,7 @@
 namespace Core\Routes;
 
 use Attribute;
+use Core\Request;
 
 /**
  * Marks this method to serve PUT requests.
@@ -28,6 +29,10 @@ class PUT
 
     public function path(): string {
         return $this->path;
+    }
+
+    public function method() {
+        return Request::METHOD_PUT;
     }
 
 }

@@ -6,18 +6,23 @@
  * and open the template in the editor.
  */
 
-namespace Core\Routes;
+namespace Core\RequestMethods;
 
 use Attribute;
 
 /**
- * Marks a method as startup
- * This module will be called with these arguments: Request, Controller
+ * Marks a method to serve GET requests.
+ * Takes route path as argument
  *
  * @author azcraft
  */
 #[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-class StartUp
+class GET extends RequestMethod
 {
-    
+
+    public function __construct(string $path = '/')
+    {
+        parent::__construct(parent::GET, $path);
+    }
+
 }

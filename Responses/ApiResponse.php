@@ -20,7 +20,8 @@ class ApiResponse extends InstantResponse
      * Outputs pretty JSON
      * @param string $output
      */
-    public function echo($output) {
+    public function echo($output)
+    {
         echo json_encode($output, JSON_PRETTY_PRINT);
     }
 

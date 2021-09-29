@@ -27,7 +27,8 @@ class Request implements \Serializable
     private array $args = [];
     private int $method = self::METHOD_NONE;
 
-    public function __construct(?string $uri = null, ?string $method = null) {
+    public function __construct(?string $uri = null, ?string $method = null)
+    {
         if (isset($uri, $method)){
             $this->defineFromString($uri);
             $this->setMethod($method || self::METHOD_GET);
@@ -57,7 +58,8 @@ class Request implements \Serializable
      * Returns the Request's method
      * @return int The Request's method
      */
-    public function method(): int {
+    public function method(): int
+    {
         return $this->method;
     }
 
@@ -67,12 +69,14 @@ class Request implements \Serializable
      * @return void
      * @throws Exception
      */
-    public function setMethod($method): void {
+    public function setMethod($method): void
+    {
         if (is_string($method)){
             $method = strtolower($method);
         }
 
-        switch ($method){
+        switch ($method)
+        {
             case "get":
             case self::METHOD_GET:
                 $this->module = self::METHOD_GET;
@@ -120,7 +124,8 @@ class Request implements \Serializable
      * @param string $uri
      * @return void
      */
-    private function defineFromString(string $uri): void {
+    private function defineFromString(string $uri): void
+    {
         $pure_uri = self::stripVariablesFromPath($uri);
         $path = preg_split("/\//", $pure_uri, -1, PREG_SPLIT_NO_EMPTY);
         $this->module = $path[0] ?? null;
@@ -133,7 +138,8 @@ class Request implements \Serializable
      * @param string $input
      * @return string
      */
-    private static function stripVariablesFromPath(string $input): string {
+    private static function stripVariablesFromPath(string $input): string
+    {
         $without_get_variables = explode('?', $input, 2)[0];
         $without_focus_element = explode('#', $without_get_variables, 2)[0];
         return $without_focus_element;
@@ -143,7 +149,8 @@ class Request implements \Serializable
      * Gathers information about the request from $_SERVER
      * @return void
      */
-    private function defineFromServerGlobals(): void {
+    private function defineFromServerGlobals(): void
+    {
         $this->defineFromString($_SERVER["REQUEST_URI"]);
         $this->setMethod($_SERVER["REQUEST_METHOD"] ?? self::METHOD_GET);
     }
@@ -165,7 +172,8 @@ class Request implements \Serializable
      * @param string $serialized
      * @return void
      */
-    public function unserialize(string $serialized): void {
+    public function unserialize(string $serialized): void
+    {
         $data = explode('*', $serialized, 2);
 
         $this->setMethod($data[0]);

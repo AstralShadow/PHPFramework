@@ -24,7 +24,8 @@ class Template
      * Throws exception if not existing.
      * @param string $file
      */
-    public function __construct(string $file) {
+    public function __construct(string $file)
+    {
         $this->file = 'Templates/' . $file;
         if (!file_exists($this->file)){
             throw new Exception("Template $file do not exist.");
@@ -36,7 +37,8 @@ class Template
      * @param string $name
      * @param string $value
      */
-    public function setValue(string $name, string $value) {
+    public function setValue(string $name, string $value)
+    {
         $this->variables[$name] = $value;
     }
 
@@ -44,7 +46,8 @@ class Template
      * Addes multiple variables to be replaced within the template file
      * @param array $variables
      */
-    public function setValues(array $variables) {
+    public function setValues(array $variables)
+    {
         foreach ($variables as $name => $value){
             $this->variables[$name] = $value;
         }
@@ -64,7 +67,8 @@ class Template
      * @return string
      * @throws Exception
      */
-    private function processFile(string $file): string {
+    private function processFile(string $file): string
+    {
         if (!file_exists($file)){
             throw new Exception("Template $file do not exist.");
         }
@@ -92,7 +96,8 @@ class Template
      * @param string $input
      * @return string
      */
-    private function insertFiles(string $input): string {
+    private function insertFiles(string $input): string
+    {
         $commands = [];
         preg_match_all('/\$\{([^{}]*)\}/', $input, $commands);
         foreach ($commands[1] as $i => $command){

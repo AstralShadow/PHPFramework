@@ -10,6 +10,7 @@ namespace Core\Responses;
 
 use \Core\RequestResponse;
 use \Core\Template;
+use \Core\Request;
 
 /**
  * Uses php output buffering.
@@ -26,7 +27,8 @@ class TemplateResponse implements RequestResponse
      * Sets http response code
      * @param int $httpResponseCode
      */
-    public function __construct(int $code = 200, string $file = "default.html") {
+    public function __construct(int $code = 200, string $file = "default.html")
+    {
         http_response_code($code);
         $this->template = new Template($file);
     }
@@ -37,7 +39,8 @@ class TemplateResponse implements RequestResponse
      * @param string $value
      * @return void
      */
-    public function setHeader(string $key, string $value): void {
+    public function setHeader(string $key, string $value): void
+    {
         header("$key: $value");
     }
 
@@ -45,8 +48,9 @@ class TemplateResponse implements RequestResponse
      * Prints templates output
      * @return void
      */
-    public function serve(): void {
-        echo $this->template->run();
+    public function serve(Request $req = null): void
+    {
+        echo $this->template->run($req);
     }
 
     /**
@@ -55,7 +59,8 @@ class TemplateResponse implements RequestResponse
      * @param string $value
      * @return void
      */
-    public function setValue(string $name, string $value): void {
+    public function setValue(string $name, string $value): void
+    {
         $this->template->setValue($name, $value);
     }
 
@@ -64,7 +69,8 @@ class TemplateResponse implements RequestResponse
      * @param array $variables
      * @return void
      */
-    public function setValues(array $variables): void {
+    public function setValues(array $variables): void
+    {
         $this->template->setValues($variables);
     }
 

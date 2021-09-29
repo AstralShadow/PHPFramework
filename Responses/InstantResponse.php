@@ -21,9 +21,10 @@ class InstantResponse implements RequestResponse
 
     /**
      * Sets http response code
-     * @param int $httpResponseCode
+     * @param int $code
      */
-    public function __construct(int $code = 200) {
+    public function __construct(int $code = 200)
+    {
         http_response_code($code);
     }
 
@@ -33,7 +34,8 @@ class InstantResponse implements RequestResponse
      * @param string $value
      * @return void
      */
-    public function setHeader(string $key, string $value): void {
+    public function setHeader(string $key, string $value): void
+    {
         header("$key: $value");
     }
 
@@ -42,7 +44,8 @@ class InstantResponse implements RequestResponse
      * You can use echo instead.
      * @param string $output
      */
-    public function echo(string $output) {
+    public function echo(string $output)
+    {
         echo $output;
     }
 
@@ -50,7 +53,8 @@ class InstantResponse implements RequestResponse
      * Does nothing, since text is already printed
      * @return void
      */
-    public function serve(): void {
+    public function serve(): void
+    {
         
     }
 

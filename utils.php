@@ -27,7 +27,8 @@ function isModule(string $name): bool {
  * @param string $name
  * @return bool
  */
-function isEntity(string $name): bool {
+function isEntity(string $name): bool
+{
     $class = new ReflectionClass($name);
     $parent = $class->getParentClass();
     return $parent && $parent->getName() == 'Core\\Entity';
@@ -64,7 +65,8 @@ function initClass(string $name): void {
  * Do not check if they are valid.
  * @return array
  */
-function getModuleNames(): array {
+function getModuleNames(): array
+{
     $names = [];
     foreach (scandir("Modules") as $name){
         if (!strpos($name, '.php')){
@@ -80,7 +82,8 @@ function getModuleNames(): array {
  * @param $real pass this to PHP's memory_get_usage
  * @return string
  */
-function getMemoryUsage(bool $real = false): string {
+function getMemoryUsage(bool $real = false): string
+{
     $units = ['B', 'KiB', 'MiB', 'GiB'];
     $memory_usage_raw = memory_get_usage($real);
     $unit = floor(log($memory_usage_raw, 1024));

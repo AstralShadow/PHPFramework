@@ -18,6 +18,7 @@ class Template
 
     private string $file;
     private array $variables = [];
+    private ?Request $request = null;
 
     /**
      * Takes the requested file.
@@ -57,7 +58,9 @@ class Template
      * Returns the parsed content
      * @return string
      */
-    public function run(): string {
+    public function run(Request $req = null): string
+    {
+        $this->request = $req;
         return $this->processFile($this->file);
     }
 
@@ -83,12 +86,20 @@ class Template
      * @param string $input
      * @return string
      */
-    private function insertVariables(string $input): string {
-        $keys = array_map(function ($a){
-            return '${' . $a . '}';
-        }, array_keys($this->variables));
-
-        return str_replace($keys, array_values($this->variables), $input);
+    private function insertVariables(string $input): string
+    {
+        $commands = [];
+        preg_match_all('/\$\{([^{}:]*)\}/', $input, $commands);
+        foreach ($commands[1] as $i => $command){
+            $default = "\${$command}";
+            if (strpos($command, '=')){
+                $default = implode('=', array_slice(explode('=', $command), 1));
+            }
+            $command = explode('=', $command)[0];
+            $value = $this->variables[$command] ?? $default;
+            $input = str_replace($commands[0][$i], $value, $input);
+        }
+        return $input;
     }
 
     /**
@@ -101,9 +112,19 @@ class Template
         $commands = [];
         preg_match_all('/\$\{([^{}]*)\}/', $input, $commands);
         foreach ($commands[1] as $i => $command){
-            if (strpos($command, '.')){
-                $include = $this->processFile("Templates/" . $command);
-                $input = str_replace($commands[0][$i], $include, $input);
+            if (strpos($command, "include:") === 0 ||
+                strpos($command, "parse:") === 0){
+                $raw = str_replace(["include:", "parse:"], "", $command);
+                $subfile = $this->processFile("Templates/" . $raw);
+                $input = str_replace($commands[0][$i], $subfile, $input);
+            }
+            if (strpos($command, "resource:") === 0 ||
+                strpos($command, "path:") === 0){
+                $raw = str_replace(["resoure:", "path:"], "", $command);
+                $path = $this->request->path();
+                $prefix = str_repeat("../", max(count($path) - 1, 0));
+                $full_path = $prefix . "Resources/" . $raw;
+                $input = str_replace($commands[0][$i], $full_path, $input);
             }
         }
         return $input;

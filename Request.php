@@ -8,6 +8,8 @@
 
 namespace Core;
 
+use Core\RequestMethods\RequestMethod;
+
 /**
  * Used to parse http requests.
  * Do not include validation.
@@ -16,42 +18,18 @@ namespace Core;
 class Request implements \Serializable
 {
 
-    const METHOD_NONE = 0;
-    const METHOD_GET = 1;
-    const METHOD_PUT = 2;
-    const METHOD_POST = 4;
-    const METHOD_DELETE = 8;
-    const METHOD_ANY = 255;
-
-    private ?string $module;
-    private array $args = [];
-    private int $method = self::METHOD_NONE;
+    private array $path = [];
+    private array $vars = [];
+    private int $method = RequestMethod::GET;
 
     public function __construct(?string $uri = null, ?string $method = null)
     {
         if (isset($uri, $method)){
             $this->defineFromString($uri);
-            $this->setMethod($method || self::METHOD_GET);
+            $this->setMethod($method);
         } else {
             $this->defineFromServerGlobals();
         }
-    }
-
-    /**
-     * Returns the Request's target module
-     * @return string The Request's target module
-     */
-    public function module(): ?string {
-        return $this->module;
-    }
-
-    /**
-     * Overwrites the target module
-     * @param string $module
-     * @return void
-     */
-    public function setModule(string $module): void {
-        $this->module = $module;
     }
 
     /**
@@ -77,28 +55,27 @@ class Request implements \Serializable
 
         switch ($method)
         {
+            default:
             case "get":
-            case self::METHOD_GET:
-                $this->module = self::METHOD_GET;
+            case RequestMethod::GET:
+                $this->method = RequestMethod::GET;
                 return;
 
             case "put":
-            case self::METHOD_PUT:
-                $this->module = self::METHOD_PUT;
+            case RequestMethod::PUT:
+                $this->method = RequestMethod::PUT;
                 return;
 
             case "post":
-            case self::METHOD_POST:
-                $this->module = self::METHOD_POST;
+            case RequestMethod::POST:
+                $this->method = RequestMethod::POST;
                 return;
 
             case "delete":
-            case self::METHOD_DELETE:
-                $this->module = self::METHOD_DELETE;
+            case RequestMethod::DELETE:
+                $this->method = RequestMethod::DELETE;
                 return;
         }
-
-        throw new Exception("Tried to set invalid request method");
     }
 
     /**
@@ -106,8 +83,9 @@ class Request implements \Serializable
      * They are the target path without the module
      * @return int The Request's arguments
      */
-    public function args(): array {
-        return $this->args;
+    public function path(): array
+    {
+        return $this->path;
     }
 
     /**
@@ -115,8 +93,40 @@ class Request implements \Serializable
      * @param array $args
      * @return void
      */
-    public function setArgs(array $args): void {
-        $this->args = $args;
+    public function setPath(array $path): void
+    {
+        $this->path = $path;
+    }
+
+    public function var($name): mixed
+    {
+        if (!isset($this->vars[$name])){
+            return null;
+        }
+        return $this->vars[$name];
+    }
+
+    public function setVar(string $name, mixed $value)
+    {
+        $this->vars[$name] = $value;
+    }
+
+    public function vars(): array
+    {
+        return $this->vars;
+    }
+
+    public function clearVars(): void
+    {
+        $this->vars = [];
+    }
+
+    public function __get($name)
+    {
+        if (!isset($this->var[$name])){
+            throw new Exception("Undefined \$Request->$name");
+        }
+        return $this->var[$name];
     }
 
     /**
@@ -128,8 +138,7 @@ class Request implements \Serializable
     {
         $pure_uri = self::stripVariablesFromPath($uri);
         $path = preg_split("/\//", $pure_uri, -1, PREG_SPLIT_NO_EMPTY);
-        $this->module = $path[0] ?? null;
-        $this->args = array_slice($path, 1);
+        $this->path = $path;
         unset($path);
     }
 
@@ -152,19 +161,16 @@ class Request implements \Serializable
     private function defineFromServerGlobals(): void
     {
         $this->defineFromString($_SERVER["REQUEST_URI"]);
-        $this->setMethod($_SERVER["REQUEST_METHOD"] ?? self::METHOD_GET);
+        $this->setMethod($_SERVER["REQUEST_METHOD"] ?? RequestMethod::GET);
     }
 
     /**
      * String representation of object
      * @return string
      */
-    public function serialize(): string {
-        $path = array_merge([$this->module], $this->args);
-        $method = $this->method();
-
-        $data = $method . '*' . implode('/', $path);
-        return $data;
+    public function serialize(): string
+    {
+        return $this->method() . '*' . implode('/', $this->path);
     }
 
     /**

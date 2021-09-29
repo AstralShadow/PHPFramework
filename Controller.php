@@ -11,7 +11,7 @@ namespace Core;
 use Core\Request;
 use Core\Exception;
 use Core\RequestResponse;
-use Core\RouteTable;
+use Core\Router;
 use PDO;
 
 /**
@@ -25,18 +25,17 @@ class Controller
 
     private static ?PDO $pdo = null;
     private Request $request;
-    private string $module;
-    private RouteTable $router;
+    private Router $router;
     private RequestResponse $response;
 
     /**
      * Parses the request from $_SERVER and loads the module.
-     * @param string $default_module 
+     * @param Router $router
      */
-    public function __construct(string $defaultModule) {
-        $this->parseRequest();
-        $this->setDefaultModule('Modules\\' . $defaultModule);
-        $this->loadModuleRouter();
+    public function __construct(Router $router)
+    {
+        $this->router = $router;
+        $this->request = new Request();
     }
 
     /**
@@ -48,7 +47,8 @@ class Controller
      */
     public static function usePDO(string $dsn,
                                   string $username = null,
-                                  string $passwd = null): void {
+                                  string $passwd = null): void
+    {
         self::$pdo = new \PDO($dsn, $username, $passwd, [
             PDO::ATTR_PERSISTENT => true
         ]);
@@ -58,18 +58,19 @@ class Controller
      * Returns current PDO connection or null
      * @return PDO|null
      */
-    public static function getPDO(): ?PDO {
+    public static function getPDO(): ?PDO
+    {
         return self::$pdo;
     }
 
     /**
      * Executes and serves the request
-     * Use this one if you dont plan to perform magic outside the framework.
      * @return void
      */
-    public function run(): void {
-        $this->execute();
-        $this->serve();
+    public function run(): void
+    {
+        $this->response = $this->router->process($this->request);
+        $this->response->serve($this->request);
     }
 
     /**
@@ -77,7 +78,8 @@ class Controller
      * Stores and returns the response
      * @return RequestResponse
      */
-    public function execute(): RequestResponse {
+    public function execute(): RequestResponse
+    {
         $response = $this->router->process($this->request);
         $this->response = $response;
         return $response;
@@ -87,46 +89,9 @@ class Controller
      * Serves stored request response
      * @return void
      */
-    public function serve(): void {
-        $this->response->serve();
-    }
-
-    /**
-     * Create the Request object for the current request
-     * @return void
-     */
-    private function parseRequest(): void {
-        $this->request = new Request();
-    }
-
-    /**
-     * Set the default module if not specified.
-     * @param type $default
-     * @return void
-     * @throws Exception
-     */
-    private function setDefaultModule($default = null): void {
-        $modules = getModuleNames();
-        if (!in_array($default, $modules)){
-            throw new Exception("The specified default module does not exist");
-        }
-
-        $module = 'Modules\\' . $this->request->module();
-        if (!in_array(strtolower($module), array_map('strtolower', $modules))){
-            $module = $default;
-        }
-
-        $this->request->setModule($module);
-    }
-
-    /**
-     * Parses module routes
-     * @return void
-     */
-    private function loadModuleRouter(): void {
-        $name = $this->request->module();
-        $this->router = new RouteTable();
-        $this->router->loadModule($name);
+    public function serve(): void
+    {
+        $this->response->serve($this->request);
     }
 
 }

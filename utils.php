@@ -11,17 +11,6 @@ namespace Core;
 use \ReflectionClass;
 
 /**
- * Check if module implements Core\Module
- * Load the module if not loaded. (autoloader)
- * @param string $name
- * @return bool
- */
-function isModule(string $name): bool {
-    $class = new ReflectionClass($name);
-    return $class->getNamespaceName() === "Modules";
-}
-
-/**
  * Check if module implements Core\Entity
  * Load the module if not loaded. (autoloader)
  * @param string $name
@@ -39,24 +28,13 @@ function isEntity(string $name): bool
  * @param string $name
  * @return void
  */
-function initClass(string $name): void {
-    if (isModule($name)){
-        if (defined("DEBUG_AUTOLOAD_LOG")){
-            echo "[+] $name (Module) <br />\n";
-        }
-        return;
-    }
-
-    if (isEntity($name)){
-        if (defined("DEBUG_AUTOLOAD_LOG")){
-            echo "[+] $name (Entity) <br />\n";
-        }
-        $name::init();
-        return;
-    }
-
+function initClass(string $name): void
+{
     if (defined("DEBUG_AUTOLOAD_LOG")){
         echo "[+] $name <br />\n";
+    }
+    if (isEntity($name)){
+        $name::init();
     }
 }
 

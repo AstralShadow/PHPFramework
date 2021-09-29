@@ -17,7 +17,7 @@ use Attribute;
  * @author azcraft
  */
 #[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
-class Fallback
+class Fallback extends RequestMethod
 {
 
     public function __construct(string $path = '/')

@@ -19,9 +19,9 @@ use Attribute;
 class StartUp extends RequestMethod
 {
 
-    public function __constructor(string $path = "/")
+    public function __construct(string $path = "/")
     {
-        parent::_constructor(self::STARTUP_METHOD, $path);
+        parent::__construct(self::STARTUP_METHOD, $path);
     }
 
 }

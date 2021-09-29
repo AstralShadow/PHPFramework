@@ -123,10 +123,10 @@ class Request implements \Serializable
 
     public function __get($name)
     {
-        if (!isset($this->var[$name])){
+        if (!isset($this->vars[$name])){
             throw new Exception("Undefined \$Request->$name");
         }
-        return $this->var[$name];
+        return $this->vars[$name];
     }
 
     /**

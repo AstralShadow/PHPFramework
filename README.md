@@ -3,6 +3,8 @@
 My own php framework with minimal ORM and REST-capabilites.
 Currently not actively developed, but should be in a working state so far.
 
+This requires PHP 8.0
+
 
 # How to use.
 

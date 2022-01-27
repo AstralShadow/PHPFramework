@@ -23,7 +23,9 @@ use PDO;
 class Controller
 {
 
+    private static ?array $pdoInitData = null;
     private static ?PDO $pdo = null;
+
     private Request $request;
     private Router $router;
     private RequestResponse $response;
@@ -49,9 +51,27 @@ class Controller
                                   string $username = null,
                                   string $passwd = null): void
     {
+        self::$pdoInitData = [$dsn, $username, $passwd];
+    }
+
+    /**
+     * Creates PDO connection.
+     * Uses data from usePDO command.
+     * @return void
+     */
+    public static function initPDO() : void
+    {
+        if(count(self::$pdoInitData) < 3) return;
+
+        $dsn = self::$pdoInitData[0];
+        $username = self::$pdoInitData[1];
+        $passwd = self::$pdoInitData[2];
+
         self::$pdo = new \PDO($dsn, $username, $passwd, [
             PDO::ATTR_PERSISTENT => true
         ]);
+
+        self::$pdoInitData = null;
     }
 
     /**
@@ -60,6 +80,8 @@ class Controller
      */
     public static function getPDO(): ?PDO
     {
+        if(self::$pdo == null)
+            self::initPDO();
         return self::$pdo;
     }
 

@@ -7,8 +7,11 @@
  */
 
 require "Core/utils.php";
+$autoload_limit = 100;
+$autoload_counter = 0;
 
-spl_autoload_register(function (string $class) : void
+spl_autoload_register(function (string $class)
+    use($autoload_limit, &$autoload_counter) : void
 {
     $file = str_replace('\\', '/', $class . '.php');
     if(file_exists($file))
@@ -17,6 +20,8 @@ spl_autoload_register(function (string $class) : void
         \Core\initClass($class);
         return;
     }
+
+    return;
 
 
     // The following code is case insensitive path search,

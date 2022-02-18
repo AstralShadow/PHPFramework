@@ -8,13 +8,56 @@
 
 namespace Core\Responses;
 
+use Core\RequestResponse;
+
+
 /**
  * Instantly prints input as JSON
  *
  * @author azcraft
  */
-class ApiResponse extends InstantResponse
+class ApiResponse implements RequestResponse
 {
+
+    private int $code;
+    private $headers = [];
+    private $output = null;
+
+
+    /**
+     * Sets http response code
+     * @param int $code
+     */
+    public function __construct(int $code = 200)
+    {
+        $this->setCode($code);
+    }
+
+    /**
+     * Sets http response code
+     * @param int $code
+     * @return void
+     */
+    public function setCode(int $code) : void
+    {
+        $this->code = $code;
+    }
+
+    public function getCode() : int
+    {
+        return $this->code;
+    }
+
+    /**
+     * Sets header
+     * @param string $key
+     * @param string $value
+     * @return void
+     */
+    public function setHeader(string $key, string $value): void
+    {
+        $this->headers[$key] = $value;
+    }
 
     /**
      * Outputs pretty JSON
@@ -22,6 +65,23 @@ class ApiResponse extends InstantResponse
      */
     public function echo($output)
     {
+        $this->output = $output;
+    }
+
+    public function getOutput()
+    {
+        return $this->output;
+    }
+
+    /**
+     * Does nothing, since text is already printed
+     * @return void
+     */
+    public function serve(): void
+    {
+        http_response_code($code);
+        foreach($this->headers as $key => $value)
+            header("$key: $value");
         echo json_encode($output, JSON_PRETTY_PRINT);
     }
 

@@ -256,8 +256,6 @@ abstract class Entity
         $entity = new \ReflectionClass($this);
         $tableName = self::getTableName();
         $idName = $entity->getStaticPropertyValue("idName");
-        var_dump($tableName . "; " . $idName);
-
         $properties = $this->getDefinedProperties();
 
         $data = self::resolveReferences($properties);

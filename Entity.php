@@ -252,14 +252,21 @@ abstract class Entity
      * @return void
      */
     public function save(): void {
+        $this->resolveId();
         $dbh = self::getPDO();
         $entity = new \ReflectionClass($this);
         $tableName = self::getTableName();
-        $idName = $entity->getStaticPropertyValue("idName");
-        $properties = $this->getDefinedProperties();
+        $id_keys = self::getPrimaryKeys();
 
+        $properties = $this->getDefinedProperties();
         $data = self::resolveReferences($properties);
         $keys = array_keys($data);
+
+        $queryCondition = "$id_keys[0] = :$id_keys[0]";
+        for ($i = 1; $i < count($id_keys); $i++){
+            $key = $id_keys[$i];
+            $queryCondition .= " AND $key = :$key";
+        }
 
         $set_clause = "";
         if (count($keys)){
@@ -272,7 +279,7 @@ abstract class Entity
         $statement = $dbh->prepare(<<<EOF
             UPDATE $tableName
             SET $set_clause
-            WHERE $idName = :id;
+            WHERE $queryCondition;
         EOF);
 
         self::$queriesDone++;
@@ -280,16 +287,24 @@ abstract class Entity
             echo get_called_class() . " [SQL] save element. <br />\n";
         }
 
-        $id = $this->getId();
-        $statement->bindParam(':id', $id);
-
         foreach ($keys as $key){
             $statement->bindParam($key, $data[$key]);
         }
 
+
+        $id = $this->getId();
+        if (!is_array($id) && isset($id))
+            $id = [$id];
+        $id = self::resolveReferences($id);
+
+
+        for($k = 0; $k < count($id_keys); $k++)
+            $statement->bindParam($id_keys[$k], $id[$k]);
+
+
         $statement->execute();
 
-        $this->setId($dbh->lastInsertId());
+        $this->setId(...$id);
     }
 
     /**

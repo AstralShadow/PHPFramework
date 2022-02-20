@@ -79,10 +79,10 @@ class ApiResponse implements RequestResponse
      */
     public function serve(): void
     {
-        http_response_code($code);
+        http_response_code($this->code);
         foreach($this->headers as $key => $value)
             header("$key: $value");
-        echo json_encode($output, JSON_PRETTY_PRINT);
+        echo json_encode($this->output, JSON_PRETTY_PRINT);
     }
 
 }

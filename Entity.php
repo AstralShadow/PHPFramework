@@ -456,8 +456,9 @@ abstract class Entity
             }
 
             $entity = new \ReflectionClass($className);
-            $object = $entity->newInstanceWithoutConstructor();
-            self::$objectCache[$className][$idHash] = &$object;
+            self::$objectCache[$className][$idHash] =
+                $entity->newInstanceWithoutConstructor();
+            $object = &self::$objectCache[$className][$idHash];
             $object->setId(...$id);
             $object->morph($data);
 

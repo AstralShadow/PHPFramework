@@ -21,7 +21,7 @@ Most of the major IDE-s should have that capability.
 
 # Example
 An example in development can be found here:
-(https://github.com/AstralShadow/ToDoWebapp)[https://github.com/AstralShadow/ToDoWebapp]
+https://github.com/AstralShadow/ToDoWebapp
 
-It's actually the best thing i can propose as learning resource for now,
-as it was developed along the framework and uses most of its capabilities.
+It's the closest thing to a tutorial i can propose currently,
+because it was developed along the framework and uses most of its capabilities.

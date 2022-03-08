@@ -108,7 +108,7 @@ class Request implements \Serializable
 
     public function setVar(string $name, mixed $value)
     {
-        $this->vars[$name] = $value;
+        $this->vars[$name] = urldecode($value);
     }
 
     public function vars(): array

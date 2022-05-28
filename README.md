@@ -19,9 +19,15 @@ The project still lacks a wiki, but has some phpdocs.
 Some of them will be useful if your IDE can process them.
 Most of the major IDE-s should have that capability.
 
-# Example
-An example in development can be found here:
+
+# Examples
+
+An unfinished project that was developed alongside the framework.  
 https://github.com/AstralShadow/ToDoWebapp
 
-It's the closest thing to a tutorial i can propose currently,
-because it was developed along the framework and uses most of its capabilities.
+Web application that is based on this framework.  
+Contains interesting extensions.  
+https://github.com/AstralShadow/bookish-engine-php
+
+A website created for 36 hours. Has more sophisticated routing system.  
+https://github.com/AstralShadow/warehouse-web

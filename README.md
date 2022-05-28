@@ -22,8 +22,7 @@ Most of the major IDE-s should have that capability.
 
 # Examples
 
-Mostly finished web application.  
-Contains interesting extensions.  
+Mostly finished web application that contains interesting extensions.  
 https://github.com/AstralShadow/bookish-engine-php
 
 A website created for 36 hours. Has more sophisticated routing system.  

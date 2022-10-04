@@ -76,9 +76,16 @@ class Template
             throw new Exception("Template $file do not exist.");
         }
 
-        $raw = file_get_contents($file);
+        $output = file_get_contents($file);
 
-        return $this->insertFiles($this->insertVariables($raw));
+        do {
+            $output = $this->insertVariables($output);
+            $output = $this->insertFiles($output);
+        
+            preg_match_all('/\$\{(.*)\}/', $output, $commands);
+        } while(count($commands[0]) > 0);
+
+        return $output;
     }
 
     /**

@@ -137,4 +137,10 @@ class Template
         return $input;
     }
 
+    public function getValue(string $name)
+    {
+        if(isset($this->variables[$name]))
+            return $this->variables[$name];
+        return null;
+    }
 }

@@ -74,4 +74,9 @@ class TemplateResponse implements RequestResponse
         $this->template->setValues($variables);
     }
 
+
+    public function getValue(string $name)
+    {
+        return $this->template->getValue($name);
+    }
 }

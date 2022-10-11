@@ -120,7 +120,7 @@ abstract class Entity
         $tableName = self::getTableName();
         $properties = $this->getDefinedProperties();
 
-        $data = self::resolveReferences($properties);
+        $data = self::simplifyData($properties);
         $keys = array_keys($data);
         $prefixedKeys = array_map(function ($k){
             return ":$k";
@@ -174,7 +174,7 @@ abstract class Entity
             $values[] = $this->$key;
         }
         if ($defined){
-            $values = self::resolveReferences($values);
+            $values = self::simplifyData($values);
             $this->setId(...$values);
         } else if (count($keys) == 1 && $justInserted){
             $pdo = self::getPDO();
@@ -202,6 +202,7 @@ abstract class Entity
             $type = $property->getType();
             $typeName = $type->getName();
 
+
             if (!$type->isBuiltin()){
                 if ($typeName == 'DateTime'){
                     $data[$name] = new \DateTime($data[$name]);
@@ -218,6 +219,7 @@ abstract class Entity
                     }
                 }
             }
+
             $this->$name = $data[$name];
         }
     }
@@ -256,7 +258,7 @@ abstract class Entity
         $id_keys = self::getPrimaryKeys();
 
         $properties = $this->getDefinedProperties();
-        $data = self::resolveReferences($properties);
+        $data = self::simplifyData($properties);
         $keys = array_keys($data);
 
         $queryCondition = "$id_keys[0] = :$id_keys[0]";
@@ -292,7 +294,7 @@ abstract class Entity
         $id = $this->getId();
         if (!is_array($id) && isset($id))
             $id = [$id];
-        $id = self::resolveReferences($id);
+        $id = self::simplifyData($id);
 
 
         for($k = 0; $k < count($id_keys); $k++)
@@ -362,7 +364,7 @@ abstract class Entity
         if (count($id) == 0 || count($id) != count($keys)){
             throw new Exception("Incorrect number of primary keys.");
         }
-        $id = self::resolveReferences($id);
+        $id = self::simplifyData($id);
 
         $idHash = self::hashIds($id);
         if (isset(self::$objectCache[$className][$idHash])){
@@ -413,7 +415,7 @@ abstract class Entity
         $tableName = self::getTableName();
         $primaryKeys = self::getPrimaryKeys();
 
-        $data = self::resolveReferences($conditions);
+        $data = self::simplifyData($conditions);
         $keys = array_keys($data);
         $conditionString = "";
 
@@ -488,7 +490,7 @@ abstract class Entity
             throw new Exception("Incorrect number of primary keys.");
         }
 
-        $id = self::resolveReferences($id);
+        $id = self::simplifyData($id);
 
         $condition = "$keys[0] = ?";
         for ($i = 1; $i < count($keys); $i++){
@@ -530,6 +532,18 @@ abstract class Entity
                 }
             }
         }
+        return $data;
+    }
+
+    private static function simplifyData(array $data): array {
+        $data = self::resolveReferences($data);
+
+        foreach($data as $key => $value){
+            if (gettype($value) == "boolean"){
+                $data[$key] = $value ? 1 : 0;
+            }
+        }
+
         return $data;
     }
 

@@ -8,38 +8,50 @@
 
 namespace Core\Responses;
 
+use \Core\RequestResponse;
+
 /**
- * Uses php output buffering.
- * You can set headers at any time before end or request.
+ * Buffers response code, headers and output.
+ * The simplest proper way to implement the RequestResponse.
  *
  * @author azcraft
  */
-class BufferedResponse extends InstantResponse
+class BufferedResponse implements RequestResponse
 {
+    private int $code;
+    private array $headers = [];
+    private string $buffer = "";
 
-    /**
-     * Sets http response code
-     * @param int $httpResponseCode
-     */
+
     public function __constructor(int $code = 200) {
-        http_response_code($code);
-        ob_start();
+        $this->code = $code;
+    }
+
+    public function setHeader(string $key, string $value): void
+    {
+        $this->headers[$key] = $value;
+    }
+
+
+    public function echo($output): void {
+        $this->buffer .= $output;
     }
 
     public function getBuffer(): string {
-        return ob_get_contents();
+        return $this->buffer;
     }
 
-    public function clearBuffer(): string {
-        ob_clean();
+    public function clearBuffer(): void {
+        $this->buffer = "";
     }
 
-    /**
-     * Does nothing, since text is already printed
-     * @return void
-     */
+
     public function serve(): void {
-        ob_end_flush();
+        http_response_code($this->code);
+        for($this->headers as $key => $value)
+            header("$key: $value");
+
+        echo $this->buffer;
     }
 
 }

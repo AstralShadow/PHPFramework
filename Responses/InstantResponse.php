@@ -11,8 +11,9 @@ namespace Core\Responses;
 use \Core\RequestResponse;
 
 /**
- * The most basic implementation of RequestResponse
- * Directly prints any output. Headers are to be set before printing
+ * The most straightforward implementation demonstration of RequestResponse
+ * This is not the right way to implement RequestResponse,
+ *  but is the easiest way to understand its usage.
  *
  * @author azcraft
  */

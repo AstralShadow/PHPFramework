@@ -48,7 +48,7 @@ class BufferedResponse implements RequestResponse
 
     public function serve(): void {
         http_response_code($this->code);
-        for($this->headers as $key => $value)
+        foreach($this->headers as $key => $value)
             header("$key: $value");
 
         echo $this->buffer;

@@ -18,7 +18,6 @@ class Template
     private string $file = "";
 
 
-    use TemplateValueAccessors;
     use TemplateFileProcessing;
 
 
@@ -55,6 +54,7 @@ class Template
     }
 
 
+    /*
     private function processFile(string $file): string
     {
         if (!file_exists($file)){
@@ -111,4 +111,5 @@ class Template
         }
         return $input;
     }
+    */
 }

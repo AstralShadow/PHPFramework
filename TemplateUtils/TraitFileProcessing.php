@@ -16,8 +16,14 @@ trait TraitFileProcessing
         $tree = $this->parseFile($file);
         var_dump($tree);
 
+        $answer = "";
+        foreach($tree as $node)
+            $answer .= $node->run(
+                vars: $this->variables,
+                macros: $this->macros
+            );
 
-        return "";
+        return $answer;
     }
 
 

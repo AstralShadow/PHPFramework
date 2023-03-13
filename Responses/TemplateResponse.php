@@ -63,7 +63,7 @@ class TemplateResponse implements RequestResponse
 
     public function serve(Request $req = null): void
     {
-        http_response_code($code);
+        http_response_code($this->code);
         foreach($this->headers as $key => $value)
             header("$key: $value");
 

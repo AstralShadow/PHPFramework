@@ -18,7 +18,10 @@ use Core\RequestMethods\RequestMethod;
 class Request implements \Serializable
 {
 
+    private array $full_path = [];
+    /** $path has no empty spaces entries. */
     private array $path = [];
+
     private array $vars = [];
     private int $method = RequestMethod::GET;
 
@@ -78,25 +81,31 @@ class Request implements \Serializable
         }
     }
 
+
     /**
      * Returns the Request's arguments
      * They are the target path without the module
-     * @return int The Request's arguments
      */
     public function path(): array
     {
         return $this->path;
     }
 
-    /**
-     * Overwrites the request arguments
-     * @param array $args
-     * @return void
-     */
     public function setPath(array $path): void
     {
         $this->path = $path;
     }
+
+    public function fullPath(): array
+    {
+        return $this->full_path;
+    }
+
+    public function setFullPath(array $path): void
+    {
+        $this->full_path = $path;
+    }
+
 
     public function var($name): mixed
     {
@@ -137,9 +146,10 @@ class Request implements \Serializable
     private function defineFromString(string $uri): void
     {
         $pure_uri = self::stripVariablesFromPath($uri);
-        $path = preg_split("/\//", $pure_uri, -1, PREG_SPLIT_NO_EMPTY);
-        $this->path = $path;
-        unset($path);
+        $this->path = preg_split("/\//", $pure_uri, -1, PREG_SPLIT_NO_EMPTY);
+        $this->full_path = preg_split("/\//", $pure_uri, -1);
+        if($this->full_path[0] == "")
+            array_splice($this->full_path, 0, 1);
     }
 
     /**

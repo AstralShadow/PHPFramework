@@ -8,68 +8,45 @@
 
 namespace Core;
 
-/**
- * Parses template files
- *
- * @author azcraft
- */
+
 class Template
 {
+    public static string $file_prefix = "Templates/";
+    public static string $resource_prefix = "Resources/";
 
-    private string $file;
-    private array $variables = [];
-    private ?Request $request = null;
 
-    /**
-     * Takes the requested file.
-     * Throws exception if not existing.
-     * @param string $file
-     */
-    public function __construct(string $file)
+    private string $file = "";
+
+
+    use TemplateUtils\TraitFileProcessing;
+
+
+    public function __construct(string $file, Request $req = null)
     {
-        $this->file = 'Templates/' . $file;
-        if (!file_exists($this->file)){
-            throw new Exception("Template $file do not exist.");
-        }
+        $this->setFile($file);
+
+        if($req != null)
+            $this->setRequest($req);
     }
 
-    /**
-     * Addes a variable to be replaces within the template file
-     * @param string $name
-     * @param string $value
-     */
-    public function setValue(string $name, string $value)
+    public function setFile(string $file)
     {
-        $this->variables[$name] = $value;
+        $this->file = self::$file_prefix . $file;
+
+        if (!file_exists($this->file))
+            throw new Exception("{$this->file} do not exist.");
     }
 
-    /**
-     * Addes multiple variables to be replaced within the template file
-     * @param array $variables
-     */
-    public function setValues(array $variables)
-    {
-        foreach ($variables as $name => $value){
-            $this->variables[$name] = $value;
-        }
-    }
-
-    /**
-     * Returns the parsed content
-     * @return string
-     */
     public function run(Request $req = null): string
     {
-        $this->request = $req;
+        if($req != null)
+            $this->setRequest($req);
+
         return $this->processFile($this->file);
     }
 
-    /**
-     * Processes a file.
-     * @param string $file
-     * @return string
-     * @throws Exception
-     */
+
+    /*
     private function processFile(string $file): string
     {
         if (!file_exists($file)){
@@ -87,12 +64,8 @@ class Template
 
         return $output;
     }
+    */
 
-    /**
-     * Inserts variables within template string
-     * @param string $input
-     * @return string
-     */
     private function insertVariables(string $input): string
     {
         $commands = [];
@@ -109,11 +82,6 @@ class Template
         return $input;
     }
 
-    /**
-     * Inserts more templates within template string
-     * @param string $input
-     * @return string
-     */
     private function insertFiles(string $input): string
     {
         $commands = [];
@@ -135,12 +103,5 @@ class Template
             }
         }
         return $input;
-    }
-
-    public function getValue(string $name)
-    {
-        if(isset($this->variables[$name]))
-            return $this->variables[$name];
-        return null;
     }
 }

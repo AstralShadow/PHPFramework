@@ -18,9 +18,13 @@ use \ReflectionClass;
  */
 function isEntity(string $name): bool
 {
-    $class = new ReflectionClass($name);
-    $parent = $class->getParentClass();
-    return $parent && $parent->getName() == 'Core\\Entity';
+    try {
+        $class = new ReflectionClass($name);
+        $parent = $class->getParentClass();
+        return $parent && $parent->getName() == 'Core\\Entity';
+    } catch (\Exception $e) {
+        return false;
+    }
 }
 
 /**

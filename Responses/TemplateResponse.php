@@ -13,8 +13,7 @@ use \Core\Template;
 use \Core\Request;
 
 /**
- * Uses php output buffering.
- * You can set headers at any time before end or request.
+ * Whaps Template as a RequestResponse
  *
  * @author azcraft
  */
@@ -23,60 +22,100 @@ class TemplateResponse implements RequestResponse
 
     private Template $template;
 
+    private int $code;
+    private array $headers = [];
+    private string $output = "";
+    private bool $output_modified = true;
+
+
     /**
-     * Sets http response code
-     * @param int $httpResponseCode
+     * Recommended usage:
+     *  new TemplateResponse(file: "...", code: ...);
+     *  new TemplateResponse(file: "...", code: ..., req: $req);
+     *
      */
-    public function __construct(int $code = 200, string $file = "default.html")
+    public function __construct(int $code = 200,
+                                string $file = "default.html")
     {
-        http_response_code($code);
+        $this->setCode($code);
         $this->template = new Template($file);
     }
 
-    /**
-     * Sets header
-     * @param string $key
-     * @param string $value
-     * @return void
-     */
+    public function setCode(int $code)
+    {
+        $this->code = $code;
+    }
+
     public function setHeader(string $key, string $value): void
     {
-        header("$key: $value");
+        $this->headers[$key] = $value;
     }
 
-    /**
-     * Prints templates output
-     * @return void
-     */
+
+    public function getOutput(Request $req = null) : string
+    {
+        if($this->output_modified) {
+            $this->output = $this->template->run($req);
+            $this->output_modified = false;
+        }
+        return $this->output;
+    }
+
     public function serve(Request $req = null): void
     {
-        echo $this->template->run($req);
+        http_response_code($this->code);
+        foreach($this->headers as $key => $value)
+            header("$key: $value");
+
+        echo $this->getOutput($req);
     }
 
-    /**
-     * Defines variable into the template namespace
-     * @param string $name
-     * @param string $value
-     * @return void
-     */
+
+    /* Template controls */
+
     public function setValue(string $name, string $value): void
     {
         $this->template->setValue($name, $value);
+        $this->output_modified = true;
     }
 
-    /**
-     * Defines multiple variables into the template namespace
-     * @param array $variables
-     * @return void
-     */
     public function setValues(array $variables): void
     {
         $this->template->setValues($variables);
+        $this->output_modified = true;
     }
-
 
     public function getValue(string $name)
     {
         return $this->template->getValue($name);
     }
+
+    public function getValues(): array
+    {
+        return $this->template->getValues();
+    }
+
+
+    public function setMacro(string $name, string $value): void
+    {
+        $this->template->setMacro($name, $value);
+        $this->output_modified = true;
+    }
+
+    public function setMacros(array $variables): void
+    {
+        $this->template->setMacros($variables);
+        $this->output_modified = true;
+    }
+
+    public function getMacro(string $name)
+    {
+        return $this->template->getMacro($name);
+    }
+
+    public function getMacros(): array
+    {
+        return $this->template->getMacros();
+    }
+
 }

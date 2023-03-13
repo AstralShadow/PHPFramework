@@ -12,7 +12,7 @@ use Core\RequestResponse;
 
 
 /**
- * Instantly prints input as JSON
+ * Prints input as JSON
  *
  * @author azcraft
  */

@@ -11,9 +11,9 @@ namespace Core;
 
 class Template
 {
+    public static string $file_prefix = "Templates/";
+    public static string $resource_prefix = "Resources/";
 
-    private string $path_prefix = "";
-    //private ?Request $request = null;
 
     private string $file = "";
 
@@ -31,18 +31,10 @@ class Template
 
     public function setFile(string $file)
     {
-        $this->file = 'Templates/' . $file;
+        $this->file = self::$file_prefix . $file;
 
         if (!file_exists($this->file))
             throw new Exception("{$this->file} do not exist.");
-    }
-
-    /** Request object used to compose relative resource paths */
-    public function setRequest(Request $req): void
-    {
-        $path = $req->path();
-        $nestedness = max(count($path) - 1, 0);
-        $this->path_prefix = str_repeat("../", $nestedness);
     }
 
     public function run(Request $req = null): string
@@ -72,6 +64,7 @@ class Template
 
         return $output;
     }
+    */
 
     private function insertVariables(string $input): string
     {
@@ -111,5 +104,4 @@ class Template
         }
         return $input;
     }
-    */
 }

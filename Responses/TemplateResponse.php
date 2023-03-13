@@ -90,4 +90,32 @@ class TemplateResponse implements RequestResponse
         return $this->template->getValue($name);
     }
 
+    public function getValues(): array
+    {
+        return $this->template->getValues();
+    }
+
+
+    public function setMacro(string $name, string $value): void
+    {
+        $this->template->setMacro($name, $value);
+        $this->output_modified = true;
+    }
+
+    public function setMacros(array $variables): void
+    {
+        $this->template->setMacros($variables);
+        $this->output_modified = true;
+    }
+
+    public function getMacro(string $name)
+    {
+        return $this->template->getMacro($name);
+    }
+
+    public function getMacros(): array
+    {
+        return $this->template->getMacros();
+    }
+
 }

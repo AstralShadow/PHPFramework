@@ -14,7 +14,9 @@ class NodeString implements Node
     }
 
 
-    public function run(array $vars = [], array $macros = []) : string
+    public function run(array $vars = [],
+                        array $macros = [],
+                        string $path_prefix = "") : string
     {
         return $this->text;
     }

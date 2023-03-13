@@ -26,7 +26,9 @@ class NodeTag implements Node
         $this->nodes[] = $node;
     }
 
-    public function run(array $vars = [], array $macros = []) : string
+    public function run(array $vars = [],
+                        array $macros = [],
+                        string $path_prefix = "") : string
     {
         $command = "";
         foreach($this->nodes as $node)

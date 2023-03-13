@@ -31,7 +31,7 @@ trait TraitFileProcessing
     /** Request object used to compose relative resource paths */
     public function setRequest(Request $req): void
     {
-        $path = $req->path();
+        $path = $req->fullPath();
         $nestedness = max(count($path) - 1, 0);
         $this->path_prefix = str_repeat("../", $nestedness);
     }

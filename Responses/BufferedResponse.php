@@ -23,7 +23,7 @@ class BufferedResponse implements RequestResponse
     private string $buffer = "";
 
 
-    public function __constructor(int $code = 200) {
+    public function __construct(int $code = 200) {
         $this->code = $code;
     }
 

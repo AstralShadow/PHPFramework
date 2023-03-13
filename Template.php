@@ -18,7 +18,7 @@ class Template
     private string $file = "";
 
 
-    use TemplateFileProcessing;
+    use TemplateUtils\TraitFileProcessing;
 
 
     public function __construct(string $file, Request $req = null)
@@ -31,10 +31,10 @@ class Template
 
     public function setFile(string $file)
     {
-        if (!file_exists($this->file))
-            throw new Exception("Template $file do not exist.");
-
         $this->file = 'Templates/' . $file;
+
+        if (!file_exists($this->file))
+            throw new Exception("{$this->file} do not exist.");
     }
 
     /** Request object used to compose relative resource paths */

@@ -1,9 +1,9 @@
 <?php
 
-namespace Core;
+namespace Core\TemplateUtils;
 
 
-trait TemplateValueAccessors
+trait TraitValueAccessors
 {
 
     /**

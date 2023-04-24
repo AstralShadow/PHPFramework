@@ -40,11 +40,11 @@ class NodeTag implements Node
     {
         $this->vars = $vars;
         $this->macros = $macros;
-        $this->path_prefix = $path_prefix . Template::$resource_prefix;
+        $this->path_prefix = $path_prefix;
 
         $command = "";
         foreach($this->nodes as $node)
-            $command .= $node->run([], $this->macros);
+            $command .= $node->run([], $this->macros, $path_prefix);
 
         return $this->processCommand($command);
     }
@@ -78,13 +78,14 @@ class NodeTag implements Node
                 foreach($tree as $node)
                     $answer .= $node->run(
                         vars: $this->vars,
-                        macros: $this->macros
+                        macros: $this->macros,
+                        path_prefix: $this->path_prefix
                     );
                 return $answer;
 
             case "path":
             case "resource":
-                return $this->path_prefix . $value;
+                return $this->path_prefix . Template::$resource_prefix . $value;
         }
     }
 
@@ -93,7 +94,7 @@ class NodeTag implements Node
         $tokens = TemplateParser::parseString($this->macros[$key]);
         $command = "";
         foreach($tokens as $node)
-            $command .= $node->run([], $this->macros);
+            $command .= $node->run([], $this->macros, $this->path_prefix);
 
         return $this->processCommand($command);
     }

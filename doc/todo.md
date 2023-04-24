@@ -19,8 +19,11 @@ Simple Routers (the current ones) and Modular routers, providing lazy loading fo
 
 # Templates
 - [x] Rewrite the template system in a manner where it handles commands as tokens to allow user input to be inserted with different method that would prevent it being used inside parsed commands.
-
 - [x] Fix resource path root not being passed in `NodeTag.php`
+
+- [ ] Add ${set:var=value} command to est default value for variables.
+    - The purpose of this is to have an included template file modify variables in it's outer file.
+    - Doing that will require delayed parsing of variable fields with missing values or parsing includes first. The delayed parsing is a better approach as it will permit some templates to affect other templates' inclusion.
 
 
 # Wiki/Tutorials

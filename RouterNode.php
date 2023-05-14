@@ -113,9 +113,9 @@ class RouterNode
             return;
         }
 
-        if (isset($this->methods[$method])){
+        if (isset($this->handlers[$method])){
             $type = RequestMethod::getMethodName($method);
-            $old = $this->methods[$method]->target();
+            $old = $this->handlers[$method]->target();
             $target = $handler->target();
 
             $msg = "Trying to register second $type handler for same path<br />\n";

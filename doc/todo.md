@@ -9,6 +9,9 @@
     - <https://stackoverflow.com/questions/27941207/http-protocols-put-and-delete-and-their-usage-in-php>
     - <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/DELETE>
 
+- [ ] Permit multiple handlers per path with different priority.
+    > Higher priority handlers can be used to sort out permissions.
+
 
 # Database
 

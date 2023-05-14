@@ -2,8 +2,12 @@
 - [ ] Simple routers
 - [ ] Modular routers
     - Lazy loading for routers
+> Simple Routers (the current ones) and Modular routers, providing lazy loading for routing, effectively creating a way to have different routers for subsystems without loading all of them, as routers might as well be used for managing permissions
 
-Simple Routers (the current ones) and Modular routers, providing lazy loading for routing, effectively creating a way to have different routers for subsystems without loading all of them, as routers might as well be used for managing permissions
+- [ ] Provide an uniform variable access method that handles CREATE, POST, PUT, DELETE and other methods
+    - Possibly using php://input
+    - <https://stackoverflow.com/questions/27941207/http-protocols-put-and-delete-and-their-usage-in-php>
+    - <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/DELETE>
 
 
 # Database

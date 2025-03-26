@@ -31,6 +31,7 @@ class ApiResponse implements RequestResponse
     public function __construct(int $code = 200)
     {
         $this->setCode($code);
+        $this->setHeader("Content-Type", "text/json");
     }
 
     /**
